@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<robot name="track cart">
+    <webots>
+        <device reference="left track position sensor" type="DistanceSensor">
+            <ros>
+                <topicName>/left_sensor</topicName>
+                <alwaysOn>true</alwaysOn>
+            </ros>
+        </device>
+        <device reference="right track position sensor" type="DistanceSensor">
+            <ros>
+                <topicName>/right_sensor</topicName>
+                <alwaysOn>true</alwaysOn>
+            </ros>
+        </device>
+        <plugin type="MyRobotDriver"/>
+    </webots>
+</robot>

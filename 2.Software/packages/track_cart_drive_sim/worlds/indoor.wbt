@@ -1,0 +1,471 @@
+#VRML_SIM R2023b utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/BrushedAluminium.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/CarpetFibers.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Asphalt.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/floors/protos/RectangleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Door.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Radiator.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Window.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/bathroom/protos/BathroomSink.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/bathroom/protos/Bathtube.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/bedroom/protos/Bed.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/bathroom/protos/Toilet.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/chairs/protos/OfficeChair.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/living_room_furniture/protos/Sofa.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Wall.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/advertising_board/protos/AdvertisingBoard.proto"
+
+WorldInfo {
+  contactProperties [
+    ContactProperties {
+      forceDependentSlip [
+        0.01
+      ]
+    }
+  ]
+}
+Viewpoint {
+  orientation -0.26247402988939567 0.727580926315902 0.633824407304511 1.0013224664079736
+  position -5.916296381455531 -4.900251544041595 6.354189848446305
+  follow "track cart"
+}
+RectangleArena {
+  floorSize 10 10
+}
+Toilet {
+  translation 3.05 -3.65 0
+  rotation 0 0 1 3.14159
+}
+TexturedBackground {
+  texture "noon_cloudy_countryside"
+}
+TexturedBackgroundLight {
+  texture "noon_sunny_garden"
+  luminosity 2
+}
+DEF Room Group {
+  children [
+    AdvertisingBoard {
+      translation -2.85784 2.87 0
+      rotation 0 0 1 1.5708
+      displayWidth 2
+      displayHeight 2
+      frameThickness 0.4
+    }
+    Wall {
+      translation -4.83 -0.01 0
+      name "wall_1"
+      size 0.2 10 2.4
+    }
+    Wall {
+      translation -0.0500004 4.82 0
+      rotation 0 0 1 1.5708
+      name "wall_2"
+      size 0.2 10 2.4
+    }
+    Wall {
+      translation 4.88 -0.01 0
+      name "wall_3"
+      size 0.2 10 2.4
+    }
+    Wall {
+      translation -0.19 -4.71 0
+      rotation 0 0 1 -1.5707953071795862
+      name "wall_4"
+      size 0.2 10 2.4
+    }
+    Sofa {
+      translation -3.16 -3.14 0
+    }
+    OfficeChair {
+      translation -2.8400008523868436 -2.8662690125805506e-05 -0.0014145377399540915
+      rotation -0.0007075332517490389 -0.0006972869135538033 -0.9999995065937071 1.5707942673834745
+    }
+    Bathtube {
+      translation 3.04 2.82 0
+      rotation 0 0 1 1.5708
+    }
+    Bed {
+      translation 2.51 0 0
+    }
+    BathroomSink {
+      translation -0.91 2.46 0.51
+      rotation 0 0 1 -1.5707953071795862
+    }
+    Window {
+      translation 0.51 -2.36 0
+    }
+    Radiator {
+      translation 0 2.92 0.3
+    }
+    Door {
+      translation 0 0.69 0
+      position -0.00014940745248626954
+    }
+  ]
+}
+DEF TrackCart Robot {
+  translation -1.27823 -1.84627 0.0743953
+  rotation -0.0014958792967629424 0.0016439492271528725 -0.9999975298849834 -1.4771953071795858
+  children [
+    DEF DepthCamera Group {
+      children [
+        RangeFinder {
+          translation 0.18 0 0.1
+          name "depth-camera"
+          fieldOfView 1
+          width 640
+          height 480
+          maxRange 10
+        }
+        Camera {
+          translation 0.18 0 0.1
+          children [
+            Shape {
+              appearance BrushedAluminium {
+              }
+              geometry Mesh {
+                url [
+                  "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/camera_link.STL"
+                ]
+              }
+              castShadows FALSE
+            }
+          ]
+          name "rgb-camera"
+          fieldOfView 1
+          width 640
+          height 480
+        }
+      ]
+    }
+    DEF Imu Group {
+      children [
+        Accelerometer {
+          translation 0.1 0 0.25
+          rotation 0.5773509358554485 -0.5773509358554485 0.5773489358556708 -2.094395307179586
+        }
+        Gyro {
+          translation 0.1 0 0.25
+          rotation 0.5773509358554485 -0.5773509358554485 0.5773489358556708 -2.094395307179586
+        }
+      ]
+    }
+    Solid {
+      translation -0.2 -0.13 0.02
+      children [
+        Shape {
+          appearance BrushedAluminium {
+          }
+          geometry Mesh {
+            url [
+              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/left_wheel_link.STL"
+            ]
+          }
+          castShadows FALSE
+        }
+      ]
+      name "right_joint"
+    }
+    Solid {
+      translation -0.2 0.1 0.02
+      children [
+        Shape {
+          appearance BrushedAluminium {
+          }
+          geometry Mesh {
+            url [
+              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/left_wheel_link.STL"
+            ]
+          }
+          castShadows FALSE
+        }
+      ]
+      name "left_joint"
+    }
+    Solid {
+      children [
+        Shape {
+          appearance BrushedAluminium {
+          }
+          geometry Mesh {
+            url [
+              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/big_support_wheel_link.STL"
+            ]
+          }
+          castShadows FALSE
+        }
+      ]
+      name "big_support_wheel"
+    }
+    Solid {
+      children [
+        Shape {
+          appearance BrushedAluminium {
+          }
+          geometry Mesh {
+            url [
+              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/support_wheel_link.STL"
+            ]
+          }
+          castShadows FALSE
+        }
+      ]
+      name "support_wheel"
+    }
+    DEF left_track Track {
+      translation 0 0.12 0
+      children [
+        TrackWheel {
+          position 0.2 0.011
+          rotation 0.9071498451482397 -0.2975554637370459 0.29755655672116565 1.6680937528377513
+          radius 0.022
+        }
+        TrackWheel {
+          position 0.177 -0.06
+          rotation 0.2740911442926653 0.6800259728011672 -0.6800284706805765 2.6065524088527066
+          radius 0.01
+        }
+        TrackWheel {
+          position -0.16 -0.06
+          rotation 0.6436049201458164 0.5411887633260734 -0.5411907512270444 1.9978631708020735
+          radius 0.008
+        }
+        TrackWheel {
+          position -0.2 0.02
+          rotation 0.4308074812763035 -0.6381229985669615 0.6381253425278431 2.328036653274641
+          radius 0.02
+        }
+      ]
+      name "left_track"
+      boundingObject Group {
+        children [
+          Pose {
+            translation 0.2 4.68944e-14 0.013
+            rotation -1 9.58976e-09 9.58979e-09 -1.5707953071795862
+            children [
+              Cylinder {
+                height 0.04
+                radius 0.022
+              }
+            ]
+          }
+          Pose {
+            translation 0.01 -2.67525e-08 -0.017
+            rotation -1 9.58976e-09 9.58979e-09 -1.5707953071795862
+            children [
+              Box {
+                size 0.33 0.11 0.04
+              }
+            ]
+          }
+          Pose {
+            translation 0.19696 7.78313e-08 -0.0210191
+            rotation 0.7745965212991105 -0.44721372362178063 0.44721372362178063 1.82348
+            children [
+              Box {
+                size 0.08 0.02 0.04
+              }
+            ]
+          }
+          Pose {
+            translation -0.185269 -5.89328e-08 -0.0206437
+            rotation -0.7745976141172535 -0.4472137772106736 0.44721177721167 -1.823475307179586
+            children [
+              Box {
+                size 0.08 0.02 0.04
+              }
+            ]
+          }
+          Pose {
+            translation -0.2 7.67205e-09 0.02
+            rotation -1 9.58976e-09 9.58979e-09 -1.5707953071795862
+            children [
+              Cylinder {
+                height 0.04
+                radius 0.022
+              }
+            ]
+          }
+          Pose {
+            translation 0.178 -8.09897e-08 -0.059
+            rotation -1 9.58976e-09 9.58979e-09 -1.5707953071795862
+            children [
+              Cylinder {
+                height 0.04
+                radius 0.012
+              }
+            ]
+          }
+          Pose {
+            translation -0.16 -6.44685e-08 -0.057
+            rotation -1 9.58976e-09 9.58979e-09 -1.5707953071795862
+            children [
+              Cylinder {
+                height 0.04
+                radius 0.012
+              }
+            ]
+          }
+        ]
+      }
+      physics Physics {
+      }
+      device [
+        PositionSensor {
+          name "left track position sensor"
+        }
+        LinearMotor {
+          name "left track motor"
+        }
+      ]
+      animatedGeometry Shape {
+        appearance Asphalt {
+        }
+        geometry Box {
+          size 0.02 0.04 0.005
+        }
+        castShadows FALSE
+      }
+      geometriesCount 46
+    }
+    DEF right_track Track {
+      translation 0 -0.12 0
+      children [
+        TrackWheel {
+          position 0.2 0.011
+          rotation 0.9071498451482397 -0.2975554637370459 0.29755655672116565 1.6680937528377513
+          radius 0.022
+        }
+        TrackWheel {
+          position 0.177 -0.06
+          rotation 0.2740911442926653 0.6800259728011672 -0.6800284706805765 2.6065524088527066
+          radius 0.01
+        }
+        TrackWheel {
+          position -0.16 -0.06
+          rotation 0.6436049201458164 0.5411887633260734 -0.5411907512270444 1.9978631708020735
+          radius 0.008
+        }
+        TrackWheel {
+          position -0.2 0.02
+          rotation 0.4308074812763035 -0.6381229985669615 0.6381253425278431 2.328036653274641
+          radius 0.02
+        }
+      ]
+      name "right_track"
+      boundingObject Group {
+        children [
+          Pose {
+            translation 0.2 4.68944e-14 0.013
+            rotation -1 9.58976e-09 9.58979e-09 -1.5707953071795862
+            children [
+              Cylinder {
+                height 0.04
+                radius 0.022
+              }
+            ]
+          }
+          Pose {
+            translation 0.01 -2.67525e-08 -0.017
+            rotation -1 9.58976e-09 9.58979e-09 -1.5707953071795862
+            children [
+              Box {
+                size 0.33 0.11 0.04
+              }
+            ]
+          }
+          Pose {
+            translation 0.19696 7.78313e-08 -0.0210191
+            rotation 0.7745965212991105 -0.44721372362178063 0.44721372362178063 1.82348
+            children [
+              Box {
+                size 0.08 0.02 0.04
+              }
+            ]
+          }
+          Pose {
+            translation -0.185269 -5.89328e-08 -0.0206437
+            rotation -0.7745976141172535 -0.4472137772106736 0.44721177721167 -1.823475307179586
+            children [
+              Box {
+                size 0.08 0.02 0.04
+              }
+            ]
+          }
+          Pose {
+            translation -0.2 7.67205e-09 0.02
+            rotation -1 9.58976e-09 9.58979e-09 -1.5707953071795862
+            children [
+              Cylinder {
+                height 0.04
+                radius 0.022
+              }
+            ]
+          }
+          Pose {
+            translation 0.178 -8.09897e-08 -0.059
+            rotation -1 9.58976e-09 9.58979e-09 -1.5707953071795862
+            children [
+              Cylinder {
+                height 0.04
+                radius 0.012
+              }
+            ]
+          }
+          Pose {
+            translation -0.16 -6.44685e-08 -0.057
+            rotation -1 9.58976e-09 9.58979e-09 -1.5707953071795862
+            children [
+              Cylinder {
+                height 0.04
+                radius 0.012
+              }
+            ]
+          }
+        ]
+      }
+      physics Physics {
+      }
+      device [
+        PositionSensor {
+          name "right track position sensor"
+        }
+        LinearMotor {
+          name "right track motor"
+        }
+      ]
+      animatedGeometry Shape {
+        appearance Asphalt {
+        }
+        geometry Box {
+          size 0.02 0.04 0.005
+        }
+        castShadows FALSE
+      }
+      geometriesCount 46
+    }
+    Shape {
+      appearance CarpetFibers {
+        colorOverride 0.3 0.3 0.3
+      }
+      geometry Mesh {
+        url [
+          "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/base_link.STL"
+        ]
+      }
+    }
+  ]
+  name "track cart"
+  boundingObject Box {
+    size 0.44655181297627616 0.1 0.05487380027318713
+  }
+  physics Physics {
+    density -1
+    mass 10
+  }
+  controller "<extern>"
+}

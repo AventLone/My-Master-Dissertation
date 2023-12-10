@@ -1,0 +1,24 @@
+#忽略所有的.bin文件
+# *.bin
+# .gitignore
+
+build/
+install/
+log/
+model/
+lib/
+References/
+
+.vscode/
+.qtc_clangd/
+.idea/
+
+*.workspace
+*.user
+*.pcd
+*.so
+*.trt
+*.onnnx
+
+2.Software/packages/orb_slam3/config/settings/ORBvoc.txt
+

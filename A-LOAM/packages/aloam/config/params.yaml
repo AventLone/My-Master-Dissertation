@@ -1,0 +1,7 @@
+aloam_system:
+   ros__parameters:
+      ScanLine: 16
+      MinimumRange: 0.3
+      LineResolution: 0.05
+      PlaneResolution: 0.05
+      

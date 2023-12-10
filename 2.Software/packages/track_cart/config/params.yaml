@@ -1,0 +1,5 @@
+octomap_server:
+  ros__parameters:
+    resolution: 0.05
+    frame_id: "2d_ocupancy_map"
+    sensor_model.max_range: 5.0
