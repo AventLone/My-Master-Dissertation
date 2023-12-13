@@ -1,6 +1,4 @@
-#ifndef FASTER_LIO_SO3_MATH_H
-#define FASTER_LIO_SO3_MATH_H
-
+#pragma once
 #include <Eigen/Core>
 #include <cmath>
 
@@ -109,4 +107,3 @@ Eigen::Matrix<T, 3, 1> RotMtoEuler(const Eigen::Matrix<T, 3, 3>& rot)
 }
 
 }   // namespace faster_lio
-#endif

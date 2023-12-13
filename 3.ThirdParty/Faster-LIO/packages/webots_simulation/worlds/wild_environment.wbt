@@ -27,8 +27,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.09445801267237224 -0.5780367361665224 -0.8105252713419492 5.885264837569766
-  position -13.413427714919115 5.281693428139061 3.464087013619049
+  orientation 0.22860799784597008 -0.7469885323349433 -0.6242968171318387 5.371595336213232
+  position -14.361092336446305 1.7792071389129074 11.077027088546728
 }
 TexturedBackground {
   texture "noon_cloudy_countryside"
@@ -229,6 +229,9 @@ DEF trackCart Robot {
   translation -8.90845 7.16731 2.53371
   rotation 0.29725704531698866 -0.1915050291950397 -0.935395142601468 0.0691311
   children [
+    InertialUnit {
+      name "imu"
+    }
     VelodyneVLP-16 {
       translation 0 0 0.6
       name "Lidar"
@@ -251,7 +254,7 @@ DEF trackCart Robot {
               }
               geometry Mesh {
                 url [
-                  "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/camera_link.STL"
+                  "/home/avent/Public/Dissertation/3.ThirdParty/Faster-LIO/packages/webots_simulation/worlds/track_cart_mesh/camera_link.STL"
                 ]
               }
               castShadows FALSE
@@ -295,7 +298,7 @@ DEF trackCart Robot {
           }
           geometry Mesh {
             url [
-              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/left_wheel_link.STL"
+              "/home/avent/Public/Dissertation/3.ThirdParty/Faster-LIO/packages/webots_simulation/worlds/track_cart_mesh/left_wheel_link.STL"
             ]
           }
           castShadows FALSE
@@ -311,7 +314,7 @@ DEF trackCart Robot {
           }
           geometry Mesh {
             url [
-              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/left_wheel_link.STL"
+              "/home/avent/Public/Dissertation/3.ThirdParty/Faster-LIO/packages/webots_simulation/worlds/track_cart_mesh/left_wheel_link.STL"
             ]
           }
           castShadows FALSE
@@ -326,7 +329,7 @@ DEF trackCart Robot {
           }
           geometry Mesh {
             url [
-              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/big_support_wheel_link.STL"
+              "/home/avent/Public/Dissertation/3.ThirdParty/Faster-LIO/packages/webots_simulation/worlds/track_cart_mesh/big_support_wheel_link.STL"
             ]
           }
           castShadows FALSE
@@ -341,7 +344,7 @@ DEF trackCart Robot {
           }
           geometry Mesh {
             url [
-              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/support_wheel_link.STL"
+              "/home/avent/Public/Dissertation/3.ThirdParty/Faster-LIO/packages/webots_simulation/worlds/track_cart_mesh/support_wheel_link.STL"
             ]
           }
           castShadows FALSE
@@ -587,7 +590,7 @@ DEF trackCart Robot {
       }
       geometry Mesh {
         url [
-          "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/base_link.STL"
+          "/home/avent/Public/Dissertation/3.ThirdParty/Faster-LIO/packages/webots_simulation/worlds/track_cart_mesh/base_link.STL"
         ]
       }
     }
@@ -4478,7 +4481,7 @@ DEF Grass Group {
               name "grass_4"
             }
             Solid {
-              translation 2.97 0.99 2.77
+              translation 2.97 0.99 2.83
               children [
                 Shape {
                   appearance Grass {
@@ -4493,7 +4496,7 @@ DEF Grass Group {
               name "grass_5"
             }
             Solid {
-              translation 1.9 2.54 2.81
+              translation 1.9 2.54 2.87
               children [
                 Shape {
                   appearance Grass {
@@ -4508,7 +4511,7 @@ DEF Grass Group {
               name "grass_6"
             }
             Solid {
-              translation -1.39 0 2.82
+              translation -1.39 0 2.77
               children [
                 Shape {
                   appearance Grass {
@@ -4574,7 +4577,7 @@ DEF Grass Group {
           translation 1.83 6.85 -0.41
           children [
             Solid {
-              translation -1.13 0 2.8
+              translation -1.13 0 2.73
               children [
                 Shape {
                   appearance Grass {
@@ -4634,7 +4637,7 @@ DEF Grass Group {
               name "grass_4"
             }
             Solid {
-              translation 1.37 5.81 2.77
+              translation 1.37 5.81 2.95
               children [
                 Shape {
                   appearance Grass {
@@ -4664,7 +4667,7 @@ DEF Grass Group {
               name "grass_6"
             }
             Solid {
-              translation -0.78 -1.53 2.82
+              translation -0.78 -1.53 2.77
               children [
                 Shape {
                   appearance Grass {
@@ -4805,7 +4808,7 @@ DEF Grass Group {
               name "grass_5"
             }
             Solid {
-              translation -3.48 1.16 2.81
+              translation -3.48 1.16 2.69
               children [
                 Shape {
                   appearance Grass {
@@ -4820,7 +4823,7 @@ DEF Grass Group {
               name "grass_6"
             }
             Solid {
-              translation -0.35 -0.46 2.82
+              translation -0.35 -0.46 2.76
               children [
                 Shape {
                   appearance Grass {

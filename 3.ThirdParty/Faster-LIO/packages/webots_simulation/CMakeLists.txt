@@ -5,17 +5,19 @@ if(NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 17)
 endif()
 
-find_package(ament_cmake REQUIRED)
-
-set(DEPENDED_PACKEGES
+# --------------------------------------------------------------------------------
+# Find dependent ROS2 packages
+# --------------------------------------------------------------------------------
+set(DEPENDENT_PACKAGIES
     rclcpp
     sensor_msgs
     pluginlib
     webots_ros2_driver
 )
+find_package(ament_cmake REQUIRED)
 
-foreach(Dependency IN ITEMS ${DEPENDED_PACKEGES})
-    find_package(${Dependency} REQUIRED)
+foreach(PACKAGE IN ITEMS ${DEPENDENT_PACKAGIES})
+    find_package(${PACKAGE} REQUIRED)
 endforeach()
 
 # Besides the package specific dependencies we also need the `pluginlib` and
@@ -24,30 +26,12 @@ endforeach()
 # Export the plugin configuration file
 pluginlib_export_plugin_description_file(webots_ros2_driver track_cart_driver.xml)
 
-# Obstacle avoider
-# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-
-# add_executable(obstacle_avoider
-# src/ObstacleAvoider.cpp
-# )
-# ament_target_dependencies(obstacle_avoider
-# rclcpp
-# geometry_msgs
-# sensor_msgs
-# )
-# install(TARGETS obstacle_avoider
-# DESTINATION lib/${PROJECT_NAME}
-# )
-# install(DIRECTORY include/
-# DESTINATION include
-# )
-
 # MyRobotDriver library
 add_library(${PROJECT_NAME} SHARED src/MyRobotDriver.cpp)
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
-ament_target_dependencies(${PROJECT_NAME} ${DEPENDED_PACKEGES})
+ament_target_dependencies(${PROJECT_NAME} ${DEPENDENT_PACKAGIES})
 install(
     TARGETS ${PROJECT_NAME}
     ARCHIVE DESTINATION lib

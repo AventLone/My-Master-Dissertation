@@ -1,13 +1,8 @@
-#ifndef FASTER_LIO_POINTCLOUD_PROCESSING_H
-#define FASTER_LIO_POINTCLOUD_PROCESSING_H
-
-// #include <livox_ros_driver/CustomMsg.h>
+#pragma once
 #include <pcl_conversions/pcl_conversions.h>
-
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-
-#include "common_lib.h"
+#include "common_lib.hpp"
 
 namespace velodyne_ros
 {
@@ -77,9 +72,8 @@ public:
     PointCloudPreprocess() = default;
     ~PointCloudPreprocess() = default;
 
-    /// processors
-    // void process(const livox_ros_driver::CustomMsg::ConstPtr& msg, PointCloudType::Ptr& pcl_out);
-    void process(const sensor_msgs::msg::PointCloud2::ConstPtr& msg, PointCloudType::Ptr& pcl_out);
+    /* processors */
+    void process(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg, PointCloudType::Ptr& pcl_out);
     void set(LidarType lid_type, double bld, int pfilt_num);
 
     /* accessors */
@@ -103,6 +97,7 @@ public:
     {
         return mTimeScale;
     }
+
     LidarType getLidarType() const
     {
         return mLidarType;
@@ -114,8 +109,8 @@ public:
 
 private:
     // void AviaHandler(const livox_ros_driver::CustomMsg::ConstPtr& msg);
-    void Oust64Handler(const sensor_msgs::msg::PointCloud2::ConstPtr& msg);
-    void VelodyneHandler(const sensor_msgs::msg::PointCloud2::ConstPtr& msg);
+    void Oust64Handler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg);
+    void VelodyneHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg);
 
     PointCloudType mFullCloud, mOutCloud;
 
@@ -128,5 +123,3 @@ private:
     bool mOffsetTimeGiven = false;
 };
 }   // namespace faster_lio
-
-#endif

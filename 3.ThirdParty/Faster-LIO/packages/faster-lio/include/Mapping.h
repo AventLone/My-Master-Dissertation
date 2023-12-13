@@ -1,14 +1,13 @@
-#ifndef FASTER_LIO_LASER_MAPPING_H
-#define FASTER_LIO_LASER_MAPPING_H
-
-// #include <livox_ros_driver/CustomMsg.h>
+#pragma once
 #include <nav_msgs/msg/path.hpp>
 #include <pcl/filters/voxel_grid.h>
-#include <rclcpp/rclcpp.hpp>
+// #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <condition_variable>
-#include <thread>
-
+#include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <tf2_ros/transform_broadcaster.h>
+// #include <condition_variable>
+// #include <thread>
 #include "imu_processing.hpp"
 #include "ivox3d/ivox3d.h"
 #include "options.h"
@@ -19,7 +18,7 @@ namespace faster_lio
 class Mapping : public rclcpp::Node
 {
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 #ifdef IVOX_NODE_TYPE_PHC
     using IVoxType = IVox<3, IVoxNodeType::PHC, PointType>;
@@ -28,26 +27,9 @@ public:
 #endif
 
     Mapping(const std::string& name);
-    // ~Mapping()
-    // {
-    //     mDownBodyScan = nullptr;
-    //     mUndistortScan = nullptr;
-    //     mDownWorldScan = nullptr;
-    //     LOG(INFO) << "laser mapping deconstruct";
-    // }
-
-    /// init with ros
-    // bool InitROS(ros::NodeHandle& nh);
-
-    /// init without ros
-    // bool InitWithoutROS(const std::string& config_yaml);
 
     void run();
 
-    /* callbacks of lidar and imu */
-    void lidarCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg);
-    // void LivoxPCLCallBack(const livox_ros_driver::CustomMsg::ConstPtr& msg);
-    void imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg);
 
     // sync lidar with imu
     bool syncPackages();
@@ -105,7 +87,6 @@ private:
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr mPathPub;
 
     std::unique_ptr<tf2_ros::TransformBroadcaster> mTfBroadcaster;
-
 
     std::string mTfImuFrame;
     std::string mTfWorldFrame;
@@ -165,20 +146,17 @@ private:
     template<typename T>
     void setPoseStamp(T& out);
 
-    void PointBodyToWorld(PointType const* pi, PointType* const po);
-    void PointBodyToWorld(const common::V3F& pi, PointType* const po);
-    void PointBodyLidarToIMU(PointType const* const pi, PointType* const po);
+    void pointBodyToWorld(PointType const* pi, PointType* const po);
+    void pointBodyToWorld(const common::V3F& pi, PointType* const po);
+    void pointBodyLidarToIMU(PointType const* const pi, PointType* const po);
 
-    void MapIncremental();
-
-    void SubAndPubToROS();
-
-    bool loadParams();
-    bool loadParamsFromYAML(const std::string& yaml);
+    void mapIncremental();
 
     void printState(const state_ikfom& s);
+
+    /* callbacks of lidar and imu */
+    void lidarCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg);
+    void imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg);
 };
 
 }   // namespace faster_lio
-
-#endif   // FASTER_LIO_LASER_MAPPING_H

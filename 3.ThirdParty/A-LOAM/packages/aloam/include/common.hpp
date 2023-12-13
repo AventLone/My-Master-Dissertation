@@ -2,7 +2,6 @@
 #include <cmath>
 #include <pcl/point_types.h>
 
-// typedef pcl::PointXYZI PointType;
 using PointType = pcl::PointXYZI;
 
 inline double rad2deg(double radians)

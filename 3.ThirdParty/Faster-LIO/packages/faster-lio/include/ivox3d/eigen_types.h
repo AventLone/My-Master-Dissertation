@@ -1,7 +1,3 @@
-//
-// Created by xiang on 2021/7/16.
-//
-
 #ifndef FASTER_LIO_EIGEN_TYPES_H
 #define FASTER_LIO_EIGEN_TYPES_H
 

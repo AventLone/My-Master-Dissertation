@@ -1,7 +1,6 @@
-#ifndef COMMON_LIB_H
-#define COMMON_LIB_H
-
-#include <eigen_conversions/eigen_msg.h>
+#pragma once
+// #include <eigen_conversions/eigen_msg.h>
+#include <deque>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 
@@ -10,12 +9,14 @@
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
-#include <boost/array.hpp>
 #include <unsupported/Eigen/ArpackSupport>
 
-#include "faster_lio/Pose6D.h"
+// #include "faster_lio/Pose6D.h"
+#include <faster_lio_msgs/msg/pose6_d.hpp>
 #include "options.h"
-#include "so3_math.h"
+#include "so3_math.hpp"
+
+#define ROOT_DIR "/home/avent/"
 
 using PointType = pcl::PointXYZINormal;
 using PointCloudType = pcl::PointCloud<PointType>;
@@ -24,8 +25,7 @@ using PointVector = std::vector<PointType, Eigen::aligned_allocator<PointType>>;
 
 namespace faster_lio::common
 {
-
-constexpr double G_m_s2 = 9.81;   // Gravity const in GuangDong/China
+constexpr double G_m_s2 = 9.81;   // Gravity constant in GuangDong/China
 
 template<typename S>
 inline Eigen::Matrix<S, 3, 1> VecFromArray(const std::vector<double>& v)
@@ -34,7 +34,7 @@ inline Eigen::Matrix<S, 3, 1> VecFromArray(const std::vector<double>& v)
 }
 
 template<typename S>
-inline Eigen::Matrix<S, 3, 1> VecFromArray(const boost::array<S, 3>& v)
+inline Eigen::Matrix<S, 3, 1> VecFromArray(const std::array<S, 3>& v)
 {
     return Eigen::Matrix<S, 3, 1>(v[0], v[1], v[2]);
 }
@@ -48,7 +48,7 @@ inline Eigen::Matrix<S, 3, 3> MatFromArray(const std::vector<double>& v)
 }
 
 template<typename S>
-inline Eigen::Matrix<S, 3, 3> MatFromArray(const boost::array<S, 9>& v)
+inline Eigen::Matrix<S, 3, 3> MatFromArray(const std::array<S, 9>& v)
 {
     Eigen::Matrix<S, 3, 3> m;
     m << v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8];
@@ -60,7 +60,7 @@ inline std::string DEBUG_FILE_DIR(const std::string& name)
     return std::string(ROOT_DIR) + "Log/" + name;
 }
 
-using Pose6D = faster_lio::Pose6D;
+using Pose6Dmsg = faster_lio_msgs::msg::Pose6D;
 using V3D = Eigen::Vector3d;
 using V4D = Eigen::Vector4d;
 using V5D = Eigen::Matrix<double, 5, 1>;
@@ -90,7 +90,7 @@ struct MeasureGroup
     MeasureGroup()
     {
         this->lidar_cloud.reset(new PointCloudType());
-    };
+    }
 
     double lidar_bag_time = 0;
     double lidar_end_time = 0;
@@ -122,10 +122,10 @@ T deg2rad(const T& degrees)
  * @return
  */
 template<typename T>
-Pose6D set_pose6d(const double t, const Eigen::Matrix<T, 3, 1>& a, const Eigen::Matrix<T, 3, 1>& g,
-                  const Eigen::Matrix<T, 3, 1>& v, const Eigen::Matrix<T, 3, 1>& p, const Eigen::Matrix<T, 3, 3>& R)
+Pose6Dmsg set_pose6d(const double t, const Eigen::Matrix<T, 3, 1>& a, const Eigen::Matrix<T, 3, 1>& g,
+                     const Eigen::Matrix<T, 3, 1>& v, const Eigen::Matrix<T, 3, 1>& p, const Eigen::Matrix<T, 3, 3>& R)
 {
-    Pose6D rot_kp;
+    Pose6Dmsg rot_kp;
     rot_kp.offset_time = t;
     for (int i = 0; i < 3; i++)
     {
@@ -276,4 +276,3 @@ bool esti_plane(Eigen::Matrix<T, 4, 1>& pca_result, const PointVector& point, co
 }
 
 }   // namespace faster_lio::common
-#endif

@@ -1,11 +1,7 @@
-//
-// Created by xiang on 2021/9/16.
-//
-
 #ifndef FASTER_LIO_IVOX3D_H
 #define FASTER_LIO_IVOX3D_H
 
-#include <glog/logging.h>
+#include "macro_print.h"
 #include <execution>
 #include <list>
 #include <thread>
@@ -80,16 +76,16 @@ public:
      * add points
      * @param points_to_add
      */
-    void AddPoints(const PointVector& points_to_add);
+    void addPoints(const PointVector& points_to_add);
 
     /// get nn
-    bool GetClosestPoint(const PointType& pt, PointType& closest_pt);
+    bool getClosestPoint(const PointType& pt, PointType& closest_pt);
 
     /// get nn with condition
-    bool GetClosestPoint(const PointType& pt, PointVector& closest_pt, int max_num = 5, double max_range = 5.0);
+    bool getClosestPoint(const PointType& pt, PointVector& closest_pt, int max_num = 5, double max_range = 5.0);
 
     /// get nn in cloud
-    bool GetClosestPoint(const PointVector& cloud, PointVector& closest_cloud);
+    bool getClosestPoint(const PointVector& cloud, PointVector& closest_cloud);
 
     /// get number of points
     size_t NumPoints() const;
@@ -115,7 +111,7 @@ private:
 };
 
 template<int dim, IVoxNodeType node_type, typename PointType>
-bool IVox<dim, node_type, PointType>::GetClosestPoint(const PointType& pt, PointType& closest_pt)
+bool IVox<dim, node_type, PointType>::getClosestPoint(const PointType& pt, PointType& closest_pt)
 {
     std::vector<DistPoint> candidates;
     auto key = Pos2Grid(ToEigen<float, dim>(pt));
@@ -147,7 +143,7 @@ bool IVox<dim, node_type, PointType>::GetClosestPoint(const PointType& pt, Point
 }
 
 template<int dim, IVoxNodeType node_type, typename PointType>
-bool IVox<dim, node_type, PointType>::GetClosestPoint(const PointType& pt, PointVector& closest_pt, int max_num,
+bool IVox<dim, node_type, PointType>::getClosestPoint(const PointType& pt, PointVector& closest_pt, int max_num,
                                                       double max_range)
 {
     std::vector<DistPoint> candidates;
@@ -288,12 +284,13 @@ void IVox<dim, node_type, PointType>::GenerateNearbyGrids()
     }
     else
     {
-        LOG(ERROR) << "Unknown nearby_type!";
+        // LOG(ERROR) << "Unknown nearby_type!";
+        THROW_ERROR("Unknown nearby_type!");
     }
 }
 
 template<int dim, IVoxNodeType node_type, typename PointType>
-bool IVox<dim, node_type, PointType>::GetClosestPoint(const PointVector& cloud, PointVector& closest_cloud)
+bool IVox<dim, node_type, PointType>::getClosestPoint(const PointVector& cloud, PointVector& closest_cloud)
 {
     std::vector<size_t> index(cloud.size());
     for (int i = 0; i < cloud.size(); ++i)
@@ -308,7 +305,7 @@ bool IVox<dim, node_type, PointType>::GetClosestPoint(const PointVector& cloud, 
                   [&cloud, &closest_cloud, this](size_t idx)
                   {
                       PointType pt;
-                      if (GetClosestPoint(cloud[idx], pt))
+                      if (getClosestPoint(cloud[idx], pt))
                       {
                           closest_cloud[idx] = pt;
                       }
@@ -321,7 +318,7 @@ bool IVox<dim, node_type, PointType>::GetClosestPoint(const PointVector& cloud, 
 }
 
 template<int dim, IVoxNodeType node_type, typename PointType>
-void IVox<dim, node_type, PointType>::AddPoints(const PointVector& points_to_add)
+void IVox<dim, node_type, PointType>::addPoints(const PointVector& points_to_add)
 {
     std::for_each(std::execution::unseq,
                   points_to_add.begin(),

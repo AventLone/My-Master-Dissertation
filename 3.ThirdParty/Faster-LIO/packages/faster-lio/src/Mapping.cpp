@@ -1,10 +1,8 @@
 #include <tf2_ros/transform_broadcaster.h>
-#include <yaml-cpp/yaml.h>
 #include <execution>
 #include <fstream>
-
 #include "Mapping.h"
-#include "utils.h"
+
 
 namespace faster_lio
 {
@@ -151,19 +149,16 @@ Mapping::Mapping(const std::string& name) : rclcpp::Node(name)
         mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY18;
     }
 
-    // mPath.header.stamp = this->now();
-    // mPath.header.frame_id = "camera_init";
-
     mScanVoxelFilter.setLeafSize(filter_size_surf_min, filter_size_surf_min, filter_size_surf_min);
 
     lidar_T_wrt_IMU = common::VecFromArray<double>(mExtrinT);
     lidar_R_wrt_IMU = common::MatFromArray<double>(mExtrinR);
 
-    mImuProcessor->SetExtrinsic(lidar_T_wrt_IMU, lidar_R_wrt_IMU);
-    mImuProcessor->SetGyrCov(common::V3D(gyr_cov, gyr_cov, gyr_cov));
-    mImuProcessor->SetAccCov(common::V3D(acc_cov, acc_cov, acc_cov));
-    mImuProcessor->SetGyrBiasCov(common::V3D(b_gyr_cov, b_gyr_cov, b_gyr_cov));
-    mImuProcessor->SetAccBiasCov(common::V3D(b_acc_cov, b_acc_cov, b_acc_cov));
+    mImuProcessor->setExtrinsic(lidar_T_wrt_IMU, lidar_R_wrt_IMU);
+    mImuProcessor->setGyrCov(common::V3D(gyr_cov, gyr_cov, gyr_cov));
+    mImuProcessor->setAccCov(common::V3D(acc_cov, acc_cov, acc_cov));
+    mImuProcessor->setGyrBiasCov(common::V3D(b_gyr_cov, b_gyr_cov, b_gyr_cov));
+    mImuProcessor->setAccBiasCov(common::V3D(b_acc_cov, b_acc_cov, b_acc_cov));
 
 
     mPath.header.stamp = this->now();
@@ -187,336 +182,22 @@ Mapping::Mapping(const std::string& name) : rclcpp::Node(name)
     /* Initiate Subscriptions */
     mLidarSub = create_subscription<sensor_msgs::msg::PointCloud2>(
         lidar_topic,
-        rclcpp::SensorDataQoS().reliable(),
+        rclcpp::SensorDataQoS().best_effort(),
         std::bind(&Mapping::lidarCallback, this, std::placeholders::_1));
-    mImuSub = create_subscription<sensor_msgs::msg::Imu>(
-        imu_topic, rclcpp::SensorDataQoS().reliable(), std::bind(&Mapping::imuCallback, this, std::placeholders::_1));
+    mImuSub = create_subscription<sensor_msgs::msg::Imu>(imu_topic,
+                                                         rclcpp::SensorDataQoS().best_effort(),
+                                                         std::bind(&Mapping::imuCallback, this, std::placeholders::_1));
 
     /* Initiate Publishers */
     mCloudWorldPub =
-        create_publisher<sensor_msgs::msg::PointCloud2>("cloud_world", rclcpp::ParameterEventsQoS().reliable());
+        create_publisher<sensor_msgs::msg::PointCloud2>("cloud_world", rclcpp::SensorDataQoS().best_effort());
     mCloudBodyPub =
-        create_publisher<sensor_msgs::msg::PointCloud2>("cloud_world", rclcpp::ParameterEventsQoS().reliable());
+        create_publisher<sensor_msgs::msg::PointCloud2>("cloud_world", rclcpp::SensorDataQoS().best_effort());
     mCloudEffectWorldPub =
-        create_publisher<sensor_msgs::msg::PointCloud2>("cloud_world", rclcpp::ParameterEventsQoS().reliable());
-    mAftMappedOdomPub = create_publisher<nav_msgs::msg::Odometry>("odom", rclcpp::ParameterEventsQoS().reliable());
-    mPathPub = create_publisher<nav_msgs::msg::Path>("odom_path", rclcpp::ParameterEventsQoS().reliable());
+        create_publisher<sensor_msgs::msg::PointCloud2>("cloud_world", rclcpp::SensorDataQoS().best_effort());
+    mAftMappedOdomPub = create_publisher<nav_msgs::msg::Odometry>("odom", rclcpp::SensorDataQoS().best_effort());
+    mPathPub = create_publisher<nav_msgs::msg::Path>("odom_path", rclcpp::SensorDataQoS().best_effort());
 }
-
-/*
-bool Mapping::InitROS(ros::NodeHandle& nh)
-{
-    loadParams(nh);
-    SubAndPubToROS(nh);
-
-    // localmap init (after loadParams)
-    mIvox = std::make_shared<IVoxType>(mIvoxOptions);
-
-    // esekf init
-    std::vector<double> epsi(23, 0.001);
-    mESEKF.init_dyn_share(
-        get_f,
-        df_dx,
-        df_dw,
-        [this](state_ikfom& s, esekfom::dyn_share_datastruct<double>& ekfom_data) { obsModel(s, ekfom_data); },
-        options::NUM_MAX_ITERATIONS,
-        epsi.data());
-
-    return true;
-}
-*/
-
-/*
-bool Mapping::InitWithoutROS(const std::string& config_yaml)
-{
-    LOG(INFO) << "init laser mapping from " << config_yaml;
-    if (!loadParamsFromYAML(config_yaml))
-    {
-        return false;
-    }
-
-    // localmap init (after loadParams)
-    mIvox = std::make_shared<IVoxType>(mIvoxOptions);
-
-    // esekf init
-    std::vector<double> epsi(23, 0.001);
-    mESEKF.init_dyn_share(
-        get_f,
-        df_dx,
-        df_dw,
-        [this](state_ikfom& s, esekfom::dyn_share_datastruct<double>& ekfom_data) { obsModel(s, ekfom_data); },
-        options::NUM_MAX_ITERATIONS,
-        epsi.data());
-
-    if (std::is_same<IVoxType, IVox<3, IVoxNodeType::PHC, pcl::PointXYZI>>::value == true)
-    {
-        LOG(INFO) << "using phc ivox";
-    }
-    else if (std::is_same<IVoxType, IVox<3, IVoxNodeType::DEFAULT, pcl::PointXYZI>>::value == true)
-    {
-        LOG(INFO) << "using default ivox";
-    }
-
-    return true;
-}
-*/
-
-/*
-bool Mapping::loadParams(ros::NodeHandle& nh)
-{
-    // get params from param server
-    int lidar_type, ivox_nearby_type;
-    double gyr_cov, acc_cov, b_gyr_cov, b_acc_cov;
-    double filter_size_surf_min;
-    common::V3D lidar_T_wrt_IMU;
-    common::M3D lidar_R_wrt_IMU;
-
-    nh.param<bool>("path_save_en", mEnableSavePath, true);
-    nh.param<bool>("publish/path_publish_en", mEnablePubPath, true);
-    nh.param<bool>("publish/scan_publish_en", mEnablePubScan, true);
-    nh.param<bool>("publish/dense_publish_en", mEnablePubDense, false);
-    nh.param<bool>("publish/scan_bodyframe_pub_en", mEnablePubScanBody, true);
-    nh.param<bool>("publish/scan_effect_pub_en", mEnablePubScanEffect, false);
-    nh.param<std::string>("publish/tf_imu_frame", mTfImuFrame, "body");
-    nh.param<std::string>("publish/tf_world_frame", mTfWorldFrame, "camera_init");
-
-    nh.param<int>("max_iteration", options::NUM_MAX_ITERATIONS, 4);
-    nh.param<float>("esti_plane_threshold", options::ESTI_PLANE_THRESHOLD, 0.1);
-    nh.param<std::string>("map_file_path", mMapFilePath, "");
-    nh.param<bool>("common/time_sync_en", mEnableSyncTime, false);
-    nh.param<double>("filter_size_surf", filter_size_surf_min, 0.5);
-    nh.param<double>("filter_size_map", mFilterSizeMapMin, 0.0);
-    nh.param<double>("cube_side_length", mCubeLen, 200);
-    nh.param<float>("mapping/det_range", mDetRange, 300.f);
-    nh.param<double>("mapping/gyr_cov", gyr_cov, 0.1);
-    nh.param<double>("mapping/acc_cov", acc_cov, 0.1);
-    nh.param<double>("mapping/b_gyr_cov", b_gyr_cov, 0.0001);
-    nh.param<double>("mapping/b_acc_cov", b_acc_cov, 0.0001);
-    nh.param<double>("preprocess/blind", mPreprocessor->blind(), 0.01);
-    nh.param<float>("preprocess/time_scale", mPreprocessor->timeScale(), 1e-3);
-    nh.param<int>("preprocess/lidar_type", lidar_type, 1);
-    nh.param<int>("preprocess/scan_line", mPreprocessor->scanNum(), 16);
-    nh.param<int>("point_filter_num", mPreprocessor->pointFilterNum(), 2);
-    nh.param<bool>("feature_extract_enable", mPreprocessor->featureEnabled(), false);
-    nh.param<bool>("runtime_pos_log_enable", mRuntimePosLog, true);
-    nh.param<bool>("mapping/extrinsic_est_en", mEnableExtrinsicEst, true);
-    nh.param<bool>("pcd_save/pcd_save_en", mEnableSavePcd, false);
-    nh.param<int>("pcd_save/interval", mPcdSaveInterval, -1);
-    nh.param<std::vector<double>>("mapping/extrinsic_T", mExtrinT, std::vector<double>());
-    nh.param<std::vector<double>>("mapping/extrinsic_R", mExtrinR, std::vector<double>());
-
-    nh.param<float>("ivox_grid_resolution", mIvoxOptions.resolution_, 0.2);
-    nh.param<int>("ivox_nearby_type", ivox_nearby_type, 18);
-
-    LOG(INFO) << "lidar_type " << lidar_type;
-    if (lidar_type == 1)
-    {
-        mPreprocessor->setLidarType(LidarType::AVIA);
-        LOG(INFO) << "Using AVIA Lidar";
-    }
-    else if (lidar_type == 2)
-    {
-        mPreprocessor->setLidarType(LidarType::VELO32);
-        LOG(INFO) << "Using Velodyne 32 Lidar";
-    }
-    else if (lidar_type == 3)
-    {
-        mPreprocessor->setLidarType(LidarType::OUST64);
-        LOG(INFO) << "Using OUST 64 Lidar";
-    }
-    else
-    {
-        LOG(WARNING) << "unknown lidar_type";
-        return false;
-    }
-
-    if (ivox_nearby_type == 0)
-    {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::CENTER;
-    }
-    else if (ivox_nearby_type == 6)
-    {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY6;
-    }
-    else if (ivox_nearby_type == 18)
-    {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY18;
-    }
-    else if (ivox_nearby_type == 26)
-    {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY26;
-    }
-    else
-    {
-        LOG(WARNING) << "unknown ivox_nearby_type, use NEARBY18";
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY18;
-    }
-
-    mPath.header.stamp = this->now();
-    mPath.header.frame_id = "camera_init";
-
-    mScanVoxelFilter.setLeafSize(filter_size_surf_min, filter_size_surf_min, filter_size_surf_min);
-
-    lidar_T_wrt_IMU = common::VecFromArray<double>(mExtrinT);
-    lidar_R_wrt_IMU = common::MatFromArray<double>(mExtrinR);
-
-    mImuProcessor->SetExtrinsic(lidar_T_wrt_IMU, lidar_R_wrt_IMU);
-    mImuProcessor->SetGyrCov(common::V3D(gyr_cov, gyr_cov, gyr_cov));
-    mImuProcessor->SetAccCov(common::V3D(acc_cov, acc_cov, acc_cov));
-    mImuProcessor->SetGyrBiasCov(common::V3D(b_gyr_cov, b_gyr_cov, b_gyr_cov));
-    mImuProcessor->SetAccBiasCov(common::V3D(b_acc_cov, b_acc_cov, b_acc_cov));
-    return true;
-}
-*/
-
-/*
-bool Mapping::loadParamsFromYAML(const std::string& yaml_file)
-{
-    // get params from yaml
-    int lidar_type, ivox_nearby_type;
-    double gyr_cov, acc_cov, b_gyr_cov, b_acc_cov;
-    double filter_size_surf_min;
-    common::V3D lidar_T_wrt_IMU;
-    common::M3D lidar_R_wrt_IMU;
-
-    auto yaml = YAML::LoadFile(yaml_file);
-    try
-    {
-        mEnablePubPath = yaml["publish"]["path_publish_en"].as<bool>();
-        mEnablePubScan = yaml["publish"]["scan_publish_en"].as<bool>();
-        mEnablePubDense = yaml["publish"]["dense_publish_en"].as<bool>();
-        mEnablePubScanBody = yaml["publish"]["scan_bodyframe_pub_en"].as<bool>();
-        mEnablePubScanEffect = yaml["publish"]["scan_effect_pub_en"].as<bool>();
-        mTfImuFrame = yaml["publish"]["tf_imu_frame"].as<std::string>("body");
-        mTfWorldFrame = yaml["publish"]["tf_world_frame"].as<std::string>("camera_init");
-        mEnableSavePath = yaml["path_save_en"].as<bool>();
-
-        options::NUM_MAX_ITERATIONS = yaml["max_iteration"].as<int>();
-        options::ESTI_PLANE_THRESHOLD = yaml["esti_plane_threshold"].as<float>();
-        mEnableSyncTime = yaml["common"]["time_sync_en"].as<bool>();
-
-        filter_size_surf_min = yaml["filter_size_surf"].as<float>();
-        mFilterSizeMapMin = yaml["filter_size_map"].as<float>();
-        mCubeLen = yaml["cube_side_length"].as<int>();
-        mDetRange = yaml["mapping"]["det_range"].as<float>();
-        gyr_cov = yaml["mapping"]["gyr_cov"].as<float>();
-        acc_cov = yaml["mapping"]["acc_cov"].as<float>();
-        b_gyr_cov = yaml["mapping"]["b_gyr_cov"].as<float>();
-        b_acc_cov = yaml["mapping"]["b_acc_cov"].as<float>();
-        mPreprocessor->blind() = yaml["preprocess"]["blind"].as<double>();
-        mPreprocessor->timeScale() = yaml["preprocess"]["time_scale"].as<double>();
-        lidar_type = yaml["preprocess"]["lidar_type"].as<int>();
-        mPreprocessor->scanNum() = yaml["preprocess"]["scan_line"].as<int>();
-        mPreprocessor->pointFilterNum() = yaml["point_filter_num"].as<int>();
-        mPreprocessor->featureEnabled() = yaml["feature_extract_enable"].as<bool>();
-        mEnableExtrinsicEst = yaml["mapping"]["extrinsic_est_en"].as<bool>();
-        mEnableSavePcd = yaml["pcd_save"]["pcd_save_en"].as<bool>();
-        mPcdSaveInterval = yaml["pcd_save"]["interval"].as<int>();
-        mExtrinT = yaml["mapping"]["extrinsic_T"].as<std::vector<double>>();
-        mExtrinR = yaml["mapping"]["extrinsic_R"].as<std::vector<double>>();
-
-        mIvoxOptions.resolution_ = yaml["ivox_grid_resolution"].as<float>();
-        ivox_nearby_type = yaml["ivox_nearby_type"].as<int>();
-    }
-    catch (...)
-    {
-        LOG(ERROR) << "bad conversion";
-        return false;
-    }
-
-    LOG(INFO) << "lidar_type " << lidar_type;
-    if (lidar_type == 1)
-    {
-        mPreprocessor->setLidarType(LidarType::AVIA);
-        LOG(INFO) << "Using AVIA Lidar";
-    }
-    else if (lidar_type == 2)
-    {
-        mPreprocessor->setLidarType(LidarType::VELO32);
-        LOG(INFO) << "Using Velodyne 32 Lidar";
-    }
-    else if (lidar_type == 3)
-    {
-        mPreprocessor->setLidarType(LidarType::OUST64);
-        LOG(INFO) << "Using OUST 64 Lidar";
-    }
-    else
-    {
-        LOG(WARNING) << "unknown lidar_type";
-        return false;
-    }
-
-    if (ivox_nearby_type == 0)
-    {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::CENTER;
-    }
-    else if (ivox_nearby_type == 6)
-    {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY6;
-    }
-    else if (ivox_nearby_type == 18)
-    {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY18;
-    }
-    else if (ivox_nearby_type == 26)
-    {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY26;
-    }
-    else
-    {
-        LOG(WARNING) << "unknown ivox_nearby_type, use NEARBY18";
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY18;
-    }
-
-    mScanVoxelFilter.setLeafSize(filter_size_surf_min, filter_size_surf_min, filter_size_surf_min);
-
-    lidar_T_wrt_IMU = common::VecFromArray<double>(mExtrinT);
-    lidar_R_wrt_IMU = common::MatFromArray<double>(mExtrinR);
-
-    mImuProcessor->SetExtrinsic(lidar_T_wrt_IMU, lidar_R_wrt_IMU);
-    mImuProcessor->SetGyrCov(common::V3D(gyr_cov, gyr_cov, gyr_cov));
-    mImuProcessor->SetAccCov(common::V3D(acc_cov, acc_cov, acc_cov));
-    mImuProcessor->SetGyrBiasCov(common::V3D(b_gyr_cov, b_gyr_cov, b_gyr_cov));
-    mImuProcessor->SetAccBiasCov(common::V3D(b_acc_cov, b_acc_cov, b_acc_cov));
-
-    mRunOffline = true;
-    return true;
-}
-*/
-
-/*
-void Mapping::SubAndPubToROS(ros::NodeHandle& nh)
-{
-    // ROS subscribe initialization
-    std::string lidar_topic, imu_topic;
-    nh.param<std::string>("common/lid_topic", lidar_topic, "/livox/lidar");
-    nh.param<std::string>("common/imu_topic", imu_topic, "/livox/imu");
-
-    if (mPreprocessor->getLidarType() == LidarType::AVIA)
-    {
-        sub_pcl_ = nh.subscribe<livox_ros_driver::CustomMsg>(
-            lidar_topic, 200000, [this](const livox_ros_driver::CustomMsg::ConstPtr& msg) { LivoxPCLCallBack(msg); });
-    }
-    else
-    {
-        sub_pcl_ = nh.subscribe<sensor_msgs::PointCloud2>(
-            lidar_topic, 200000, [this](const sensor_msgs::PointCloud2::ConstPtr& msg) { lidarCallback(msg); });
-    }
-
-    sub_imu_ = nh.subscribe<sensor_msgs::Imu>(
-        imu_topic, 200000, [this](const sensor_msgs::Imu::ConstPtr& msg) { imuCallback(msg); });
-
-    // ROS publisher init
-    mPath.header.stamp = ros::Time::now();
-    mPath.header.frame_id = "camera_init";
-
-    pub_laser_cloud_world_ = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered", 100000);
-    pub_laser_cloud_body_ = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered_body", 100000);
-    pub_laser_cloud_effect_world_ = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered_effect_world", 100000);
-    pub_odom_aft_mapped_ = nh.advertise<nav_msgs::Odometry>("/Odometry", 100000);
-    pub_path_ = nh.advertise<nav_msgs::Path>("/path", 100000);
-}
-*/
 
 void Mapping::run()
 {
@@ -533,29 +214,26 @@ void Mapping::run()
         return;
     }
 
-    /// the first scan
+    /* The first scan */
     if (mFirstScanFlg)
     {
-        mIvox->AddPoints(mUndistortScan->points);
+        mIvox->addPoints(mUndistortScan->points);
         mFirstLidarTime = mMeasures.lidar_bag_time;
         mFirstScanFlg = false;
         return;
     }
     mEKFInitedFlg = (mMeasures.lidar_bag_time - mFirstLidarTime) >= options::INIT_TIME;
 
-    /// downsample
-    Timer::evaluate(
-        [&, this]()
-        {
-            mScanVoxelFilter.setInputCloud(mUndistortScan);
-            mScanVoxelFilter.filter(*mDownBodyScan);
-        },
-        "Downsample PointCloud");
+    /* Downsample */
+    mScanVoxelFilter.setInputCloud(mUndistortScan);
+    mScanVoxelFilter.filter(*mDownBodyScan);
 
     int cur_pts = mDownBodyScan->size();
     if (cur_pts < 5)
     {
-        LOG(WARNING) << "Too few points, skip this scan!" << mUndistortScan->size() << ", " << mDownBodyScan->size();
+        RCLCPP_WARN_STREAM(
+            get_logger(), "Too few points, skip this scan!" << mUndistortScan->size() << ", " << mDownBodyScan->size());
+
         return;
     }
     mDownWorldScan->resize(cur_pts);
@@ -564,28 +242,23 @@ void Mapping::run()
     mSurfSelectedPoints.resize(cur_pts, true);
     mPlaneCoeffs.resize(cur_pts, common::V4F::Zero());
 
-    // ICP and iterated Kalman filter update
-    Timer::evaluate(
-        [&, this]()
-        {
-            // iterated state estimation
-            double solve_H_time = 0;
-            // update the observation model, will call nn and point-to-plane residual computation
-            mESEKF.update_iterated_dyn_share_modified(options::LASER_POINT_COV, solve_H_time);
-            // save the state
-            mStatePoint = mESEKF.get_x();
-            mCurEuler = SO3ToEuler(mStatePoint.rot);
-            mLidarPosition = mStatePoint.pos + mStatePoint.rot * mStatePoint.offset_T_L_I;
-        },
-        "IEKF Solve and Update");
+    /* ICP and iterated Kalman filter update */
+    double solve_H_time = 0;   // iterated state estimation
+    /* Update the observation model, will call nn and point-to-plane residual computation */
+    mESEKF.update_iterated_dyn_share_modified(options::LASER_POINT_COV, solve_H_time);
+    /* Save the state */
+    mStatePoint = mESEKF.get_x();
+    mCurEuler = SO3ToEuler(mStatePoint.rot);
+    mLidarPosition = mStatePoint.pos + mStatePoint.rot * mStatePoint.offset_T_L_I;
 
-    // update local map
-    Timer::evaluate([&, this]() { MapIncremental(); }, "    Incremental Mapping");
+    mapIncremental();   // update local map
 
-    LOG(INFO) << "[ mapping ]: In num: " << mUndistortScan->points.size() << " downsamp " << cur_pts
-              << " Map grid num: " << mIvox->NumValidGrids() << " effect num : " << mEffectFeatNum;
+    RCLCPP_INFO_STREAM(get_logger(),
+                       "[Mapping]: In num: " << mUndistortScan->points.size() << " downsamp " << cur_pts
+                                             << " Map grid num: " << mIvox->NumValidGrids()
+                                             << " effect num : " << mEffectFeatNum);
 
-    // publish or save map pcd
+    /* publish or save map pcd */
     if (mRunOffline)
     {
         if (mEnableSavePcd)
@@ -594,18 +267,20 @@ void Mapping::run()
         }
         if (mEnableSavePath)
         {
-            publishPath(pub_path_);
+            publishPath();
         }
     }
     else
     {
-        if (pub_odom_aft_mapped_)
-        {
-            publishOdometry(pub_odom_aft_mapped_);
-        }
+        // if (pub_odom_aft_mapped_)
+        // {
+        //     publishOdometry();
+        // }
+        publishOdometry();
+
         if (mEnablePubPath || mEnableSavePath)
         {
-            publishPath(pub_path_);
+            publishPath();
         }
         if (mEnablePubScan || mEnableSavePcd)
         {
@@ -613,11 +288,11 @@ void Mapping::run()
         }
         if (mEnablePubScan && mEnablePubScanBody)
         {
-            publishFrameBody(pub_laser_cloud_body_);
+            publishFrameBody();
         }
         if (mEnablePubScan && mEnablePubScanEffect)
         {
-            publishFrameEffectWorld(pub_laser_cloud_effect_world_);
+            publishFrameEffectWorld();
         }
     }
 
@@ -628,23 +303,21 @@ void Mapping::run()
 void Mapping::lidarCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg)
 {
     mBufferMutex.lock();
-    Timer::evaluate(
-        [&, this]()
-        {
-            mScanCount++;
-            if (msg->header.stamp.sec < mLidarLastTimeStamp)
-            {
-                RCLCPP_WARN(get_logger(), "Lidar loop back, clear buffer.");
-                mLidarBuffer.clear();
-            }
 
-            PointCloudType::Ptr ptr(new PointCloudType());
-            mPreprocessor->process(msg, ptr);
-            mLidarBuffer.push_back(ptr);
-            mTimeBuffer.push_back(msg->header.stamp.sec);
-            mLidarLastTimeStamp = msg->header.stamp.sec;
-        },
-        "Preprocess (Standard)");
+    mScanCount++;
+    double msg_timestamp_sec = toSec(msg->header.stamp);
+    if (msg_timestamp_sec < mLidarLastTimeStamp)
+    {
+        RCLCPP_WARN(get_logger(), "Lidar loop back, clear buffer.");
+        mLidarBuffer.clear();
+    }
+    rclcpp::Time();
+    PointCloudType::Ptr ptr(new PointCloudType());
+    mPreprocessor->process(msg, ptr);
+    mLidarBuffer.push_back(ptr);
+    mTimeBuffer.push_back(msg_timestamp_sec);
+    mLidarLastTimeStamp = msg_timestamp_sec;
+
     mBufferMutex.unlock();
 }
 
@@ -656,10 +329,10 @@ void Mapping::imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg)
     if (std::fabs(mLidarWrtImuTimeDiff) > 0.1 && mEnableSyncTime)
     {
         // msg->header.stamp = ros::Time().fromSec(mLidarWrtImuTimeDiff + msg->header.stamp.sec);
-        imu_msg->header.stamp = rclcpp::Time((mLidarWrtImuTimeDiff + msg->header.stamp.sec) * 1e9);
+        imu_msg->header.stamp = rclcpp::Time((mLidarWrtImuTimeDiff + toSec(msg->header.stamp)) * 1e9);
     }
 
-    double timestamp = imu_msg->header.stamp.sec;
+    double timestamp = toSec(imu_msg->header.stamp);
 
     mBufferMutex.lock();
     if (timestamp < mImuLastTimeStamp)
@@ -713,11 +386,11 @@ bool Mapping::syncPackages()
     }
 
     /*** push imu_ data, and pop from imu_ buffer ***/
-    double imu_time = mImuBuffer.front()->header.stamp.sec;
+    double imu_time = toSec(mImuBuffer.front()->header.stamp);
     mMeasures.imu_buffer.clear();
     while ((!mImuBuffer.empty()) && (imu_time < mLidarEndTime))
     {
-        imu_time = mImuBuffer.front()->header.stamp.sec;
+        imu_time = toSec(mImuBuffer.front()->header.stamp);
         if (imu_time > mLidarEndTime) break;
         mMeasures.imu_buffer.push_back(mImuBuffer.front());
         mImuBuffer.pop_front();
@@ -731,14 +404,12 @@ bool Mapping::syncPackages()
 
 void Mapping::printState(const state_ikfom& s)
 {
-    // LOG(INFO) << "state r: " << s.rot.coeffs().transpose() << ", t: " << s.pos.transpose()
-    //           << ", off r: " << s.offset_R_L_I.coeffs().transpose() << ", t: " << s.offset_T_L_I.transpose();
     RCLCPP_INFO_STREAM(get_logger(),
                        "state r: " << s.rot.coeffs().transpose() << ", t: " << s.pos.transpose() << ", off r: "
                                    << s.offset_R_L_I.coeffs().transpose() << ", t: " << s.offset_T_L_I.transpose());
 }
 
-void Mapping::MapIncremental()
+void Mapping::mapIncremental()
 {
     PointVector points_to_add;
     PointVector point_no_need_downsample;
@@ -759,7 +430,7 @@ void Mapping::MapIncremental()
                   [&](const size_t& i)
                   {
                       /* transform to world frame */
-                      PointBodyToWorld(&(mDownBodyScan->points[i]), &(mDownWorldScan->points[i]));
+                      pointBodyToWorld(&(mDownBodyScan->points[i]), &(mDownWorldScan->points[i]));
 
                       /* decide if need add to map */
                       PointType& point_world = mDownWorldScan->points[i];
@@ -805,13 +476,16 @@ void Mapping::MapIncremental()
                       }
                   });
 
-    Timer::evaluate(
-        [&, this]()
-        {
-            mIvox->AddPoints(points_to_add);
-            mIvox->AddPoints(point_no_need_downsample);
-        },
-        "    IVox Add Points");
+    // Timer::evaluate(
+    //     [&, this]()
+    //     {
+    //         mIvox->addPoints(points_to_add);
+    //         mIvox->addPoints(point_no_need_downsample);
+    //     },
+    //     "    IVox Add Points");
+
+    mIvox->addPoints(points_to_add);
+    mIvox->addPoints(point_no_need_downsample);
 }
 
 /**
@@ -831,55 +505,101 @@ void Mapping::obsModel(state_ikfom& s, esekfom::dyn_share_datastruct<double>& ek
         index[i] = i;
     }
 
-    Timer::evaluate(
-        [&, this]()
-        {
-            auto R_wl = (s.rot * s.offset_R_L_I).cast<float>();
-            auto t_wl = (s.rot * s.offset_T_L_I + s.pos).cast<float>();
+    // Timer::evaluate(
+    //     [&, this]()
+    //     {
+    //         auto R_wl = (s.rot * s.offset_R_L_I).cast<float>();
+    //         auto t_wl = (s.rot * s.offset_T_L_I + s.pos).cast<float>();
 
-            /** closest surface search and residual computation **/
-            std::for_each(std::execution::par_unseq,
-                          index.begin(),
-                          index.end(),
-                          [&](const size_t& i)
+    //         /** closest surface search and residual computation **/
+    //         std::for_each(std::execution::par_unseq,
+    //                       index.begin(),
+    //                       index.end(),
+    //                       [&](const size_t& i)
+    //                       {
+    //                           PointType& point_body = mDownBodyScan->points[i];
+    //                           PointType& point_world = mDownWorldScan->points[i];
+
+    //                           /* transform to world frame */
+    //                           common::V3F p_body = point_body.getVector3fMap();
+    //                           point_world.getVector3fMap() = R_wl * p_body + t_wl;
+    //                           point_world.intensity = point_body.intensity;
+
+    //                           auto& points_near = mNearestPoints[i];
+    //                           if (ekfom_data.converge)
+    //                           {
+    //                               /** Find the closest surfaces in the map **/
+    //                               mIvox->getClosestPoint(point_world, points_near, options::NUM_MATCH_POINTS);
+    //                               mSurfSelectedPoints[i] = points_near.size() >= options::MIN_NUM_MATCH_POINTS;
+    //                               if (mSurfSelectedPoints[i])
+    //                               {
+    //                                   mSurfSelectedPoints[i] = common::esti_plane(
+    //                                       mPlaneCoeffs[i], points_near, options::ESTI_PLANE_THRESHOLD);
+    //                               }
+    //                           }
+
+    //                           if (mSurfSelectedPoints[i])
+    //                           {
+    //                               auto temp = point_world.getVector4fMap();
+    //                               temp[3] = 1.0;
+    //                               float pd2 = mPlaneCoeffs[i].dot(temp);
+
+    //                               bool valid_corr = p_body.norm() > 81 * pd2 * pd2;
+    //                               if (valid_corr)
+    //                               {
+    //                                   mSurfSelectedPoints[i] = true;
+    //                                   mResiduals[i] = pd2;
+    //                               }
+    //                           }
+    //                       });
+    //     },
+    //     "    obsModel (Lidar Match)");
+
+    auto R_wl = (s.rot * s.offset_R_L_I).cast<float>();
+    auto t_wl = (s.rot * s.offset_T_L_I + s.pos).cast<float>();
+
+    /** closest surface search and residual computation **/
+    std::for_each(std::execution::par_unseq,
+                  index.begin(),
+                  index.end(),
+                  [&](const size_t& i)
+                  {
+                      PointType& point_body = mDownBodyScan->points[i];
+                      PointType& point_world = mDownWorldScan->points[i];
+
+                      /* transform to world frame */
+                      common::V3F p_body = point_body.getVector3fMap();
+                      point_world.getVector3fMap() = R_wl * p_body + t_wl;
+                      point_world.intensity = point_body.intensity;
+
+                      auto& points_near = mNearestPoints[i];
+                      if (ekfom_data.converge)
+                      {
+                          /** Find the closest surfaces in the map **/
+                          mIvox->getClosestPoint(point_world, points_near, options::NUM_MATCH_POINTS);
+                          mSurfSelectedPoints[i] = points_near.size() >= options::MIN_NUM_MATCH_POINTS;
+                          if (mSurfSelectedPoints[i])
                           {
-                              PointType& point_body = mDownBodyScan->points[i];
-                              PointType& point_world = mDownWorldScan->points[i];
+                              mSurfSelectedPoints[i] =
+                                  common::esti_plane(mPlaneCoeffs[i], points_near, options::ESTI_PLANE_THRESHOLD);
+                          }
+                      }
 
-                              /* transform to world frame */
-                              common::V3F p_body = point_body.getVector3fMap();
-                              point_world.getVector3fMap() = R_wl * p_body + t_wl;
-                              point_world.intensity = point_body.intensity;
+                      if (mSurfSelectedPoints[i])
+                      {
+                          auto temp = point_world.getVector4fMap();
+                          temp[3] = 1.0;
+                          float pd2 = mPlaneCoeffs[i].dot(temp);
 
-                              auto& points_near = mNearestPoints[i];
-                              if (ekfom_data.converge)
-                              {
-                                  /** Find the closest surfaces in the map **/
-                                  mIvox->GetClosestPoint(point_world, points_near, options::NUM_MATCH_POINTS);
-                                  mSurfSelectedPoints[i] = points_near.size() >= options::MIN_NUM_MATCH_POINTS;
-                                  if (mSurfSelectedPoints[i])
-                                  {
-                                      mSurfSelectedPoints[i] = common::esti_plane(
-                                          mPlaneCoeffs[i], points_near, options::ESTI_PLANE_THRESHOLD);
-                                  }
-                              }
+                          bool valid_corr = p_body.norm() > 81 * pd2 * pd2;
+                          if (valid_corr)
+                          {
+                              mSurfSelectedPoints[i] = true;
+                              mResiduals[i] = pd2;
+                          }
+                      }
+                  });
 
-                              if (mSurfSelectedPoints[i])
-                              {
-                                  auto temp = point_world.getVector4fMap();
-                                  temp[3] = 1.0;
-                                  float pd2 = mPlaneCoeffs[i].dot(temp);
-
-                                  bool valid_corr = p_body.norm() > 81 * pd2 * pd2;
-                                  if (valid_corr)
-                                  {
-                                      mSurfSelectedPoints[i] = true;
-                                      mResiduals[i] = pd2;
-                                  }
-                              }
-                          });
-        },
-        "    obsModel (Lidar Match)");
 
     mEffectFeatNum = 0;
 
@@ -902,56 +622,98 @@ void Mapping::obsModel(state_ikfom& s, esekfom::dyn_share_datastruct<double>& ek
     if (mEffectFeatNum < 1)
     {
         ekfom_data.valid = false;
-        LOG(WARNING) << "No Effective Points!";
+        RCLCPP_WARN(get_logger(), "No Effective Points!");
         return;
     }
 
-    Timer::evaluate(
-        [&, this]()
-        {
-            /*** Computation of Measurement Jacobian matrix H and measurements vector ***/
-            ekfom_data.h_x = Eigen::MatrixXd::Zero(mEffectFeatNum, 12);   // 23
-            ekfom_data.h.resize(mEffectFeatNum);
+    // Timer::evaluate(
+    //     [&, this]()
+    //     {
+    //         /*** Computation of Measurement Jacobian matrix H and measurements vector ***/
+    //         ekfom_data.h_x = Eigen::MatrixXd::Zero(mEffectFeatNum, 12);   // 23
+    //         ekfom_data.h.resize(mEffectFeatNum);
 
-            index.resize(mEffectFeatNum);
-            const common::M3F off_R = s.offset_R_L_I.toRotationMatrix().cast<float>();
-            const common::V3F off_t = s.offset_T_L_I.cast<float>();
-            const common::M3F Rt = s.rot.toRotationMatrix().transpose().cast<float>();
+    //         index.resize(mEffectFeatNum);
+    //         const common::M3F off_R = s.offset_R_L_I.toRotationMatrix().cast<float>();
+    //         const common::V3F off_t = s.offset_T_L_I.cast<float>();
+    //         const common::M3F Rt = s.rot.toRotationMatrix().transpose().cast<float>();
 
-            std::for_each(std::execution::par_unseq,
-                          index.begin(),
-                          index.end(),
-                          [&](const size_t& i)
-                          {
-                              common::V3F point_this_be = mCorrPts[i].head<3>();
-                              common::M3F point_be_crossmat = SKEW_SYM_MATRIX(point_this_be);
-                              common::V3F point_this = off_R * point_this_be + off_t;
-                              common::M3F point_crossmat = SKEW_SYM_MATRIX(point_this);
+    //         std::for_each(std::execution::par_unseq,
+    //                       index.begin(),
+    //                       index.end(),
+    //                       [&](const size_t& i)
+    //                       {
+    //                           common::V3F point_this_be = mCorrPts[i].head<3>();
+    //                           common::M3F point_be_crossmat = SKEW_SYM_MATRIX(point_this_be);
+    //                           common::V3F point_this = off_R * point_this_be + off_t;
+    //                           common::M3F point_crossmat = SKEW_SYM_MATRIX(point_this);
 
-                              /*** get the normal vector of closest surface/corner ***/
-                              common::V3F norm_vec = mCorrNorm[i].head<3>();
+    //                           /*** get the normal vector of closest surface/corner ***/
+    //                           common::V3F norm_vec = mCorrNorm[i].head<3>();
 
-                              /*** calculate the Measurement Jacobian matrix H ***/
-                              common::V3F C(Rt * norm_vec);
-                              common::V3F A(point_crossmat * C);
+    //                           /*** calculate the Measurement Jacobian matrix H ***/
+    //                           common::V3F C(Rt * norm_vec);
+    //                           common::V3F A(point_crossmat * C);
 
-                              if (mEnableExtrinsicEst)
-                              {
-                                  common::V3F B(point_be_crossmat * off_R.transpose() * C);
-                                  ekfom_data.h_x.block<1, 12>(i, 0) << norm_vec[0], norm_vec[1], norm_vec[2], A[0],
-                                      A[1], A[2], B[0], B[1], B[2], C[0], C[1], C[2];
-                              }
-                              else
-                              {
-                                  ekfom_data.h_x.block<1, 12>(i, 0) << norm_vec[0], norm_vec[1], norm_vec[2], A[0],
-                                      A[1], A[2], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
-                              }
+    //                           if (mEnableExtrinsicEst)
+    //                           {
+    //                               common::V3F B(point_be_crossmat * off_R.transpose() * C);
+    //                               ekfom_data.h_x.block<1, 12>(i, 0) << norm_vec[0], norm_vec[1], norm_vec[2], A[0],
+    //                                   A[1], A[2], B[0], B[1], B[2], C[0], C[1], C[2];
+    //                           }
+    //                           else
+    //                           {
+    //                               ekfom_data.h_x.block<1, 12>(i, 0) << norm_vec[0], norm_vec[1], norm_vec[2], A[0],
+    //                                   A[1], A[2], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+    //                           }
 
-                              /*** Measurement: distance to the closest surface/corner ***/
-                              ekfom_data.h(i) = -mCorrPts[i][3];
-                          });
-        },
-        "    obsModel (IEKF Build Jacobian)");
+    //                           /*** Measurement: distance to the closest surface/corner ***/
+    //                           ekfom_data.h(i) = -mCorrPts[i][3];
+    //                       });
+    //     },
+    //     "    obsModel (IEKF Build Jacobian)");
+
+    /*** Computation of Measurement Jacobian matrix H and measurements vector ***/
+    ekfom_data.h_x = Eigen::MatrixXd::Zero(mEffectFeatNum, 12);   // 23
+    ekfom_data.h.resize(mEffectFeatNum);
+
+    index.resize(mEffectFeatNum);
+    const common::M3F off_R = s.offset_R_L_I.toRotationMatrix().cast<float>();
+    const common::V3F off_t = s.offset_T_L_I.cast<float>();
+    const common::M3F Rt = s.rot.toRotationMatrix().transpose().cast<float>();
+
+    std::for_each(std::execution::par_unseq,
+                  index.begin(),
+                  index.end(),
+                  [&](const size_t& i)
+                  {
+                      common::V3F point_this_be = mCorrPts[i].head<3>();
+                      common::M3F point_be_crossmat = SKEW_SYM_MATRIX(point_this_be);
+                      common::V3F point_this = off_R * point_this_be + off_t;
+                      common::M3F point_crossmat = SKEW_SYM_MATRIX(point_this);
+
+                      /*** get the normal vector of closest surface/corner ***/
+                      common::V3F norm_vec = mCorrNorm[i].head<3>();
+
+                      /*** calculate the Measurement Jacobian matrix H ***/
+                      common::V3F C(Rt * norm_vec);
+                      common::V3F A(point_crossmat * C);
+
+                      if (mEnableExtrinsicEst)
+                      {
+                          common::V3F B(point_be_crossmat * off_R.transpose() * C);
+                          ekfom_data.h_x.block<1, 12>(i, 0) << norm_vec[0], norm_vec[1], norm_vec[2], A[0], A[1], A[2],
+                              B[0], B[1], B[2], C[0], C[1], C[2];
+                      }
+                      else
+                      {
+                          ekfom_data.h_x.block<1, 12>(i, 0) << norm_vec[0], norm_vec[1], norm_vec[2], A[0], A[1], A[2],
+                              0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+                      }
+
+                      /*** Measurement: distance to the closest surface/corner ***/
+                      ekfom_data.h(i) = -mCorrPts[i][3];
+                  });
 }
 
 void Mapping::publishPath()
@@ -1016,7 +778,7 @@ void Mapping::publishFrameWorld()
         cloud_world.reset(new PointCloudType(size, 1));
         for (int i = 0; i < size; i++)
         {
-            PointBodyToWorld(&full_res_cloud->points[i], &cloud_world->points[i]);
+            pointBodyToWorld(&full_res_cloud->points[i], &cloud_world->points[i]);
         }
     }
     else
@@ -1031,7 +793,7 @@ void Mapping::publishFrameWorld()
         // cloud_msg.header.stamp = ros::Time().fromSec(mLidarEndTime);
         cloud_msg.header.stamp = rclcpp::Time(mLidarEndTime * 1e9);
         cloud_msg.header.frame_id = "camera_init";
-        pub_laser_cloud_world_.publish(cloud_msg);
+        mCloudWorldPub->publish(cloud_msg);
         mPublishCount -= options::PUBFRAME_PERIOD;
     }
 
@@ -1065,7 +827,7 @@ void Mapping::publishFrameBody()
 
     for (int i = 0; i < size; i++)
     {
-        PointBodyLidarToIMU(&mUndistortScan->points[i], &laser_cloud_imu_body->points[i]);
+        pointBodyLidarToIMU(&mUndistortScan->points[i], &laser_cloud_imu_body->points[i]);
     }
 
     sensor_msgs::msg::PointCloud2 cloud_msg;
@@ -1073,7 +835,7 @@ void Mapping::publishFrameBody()
     // cloud_msg.header.stamp = ros::Time().fromSec(mLidarEndTime);
     cloud_msg.header.stamp = rclcpp::Time(mLidarEndTime * 1e9);
     cloud_msg.header.frame_id = "body";
-    pub_laser_cloud_body.publish(cloud_msg);
+    mCloudBodyPub->publish(cloud_msg);
     mPublishCount -= options::PUBFRAME_PERIOD;
 }
 
@@ -1084,13 +846,13 @@ void Mapping::publishFrameEffectWorld()
 
     for (int i = 0; i < size; i++)
     {
-        PointBodyToWorld(mCorrPts[i].head<3>(), &laser_cloud->points[i]);
+        pointBodyToWorld(mCorrPts[i].head<3>(), &laser_cloud->points[i]);
     }
     sensor_msgs::msg::PointCloud2 cloud_msg;
     pcl::toROSMsg(*laser_cloud, cloud_msg);
     cloud_msg.header.stamp = rclcpp::Time(mLidarEndTime * 1e9);
     cloud_msg.header.frame_id = "camera_init";
-    pub_laser_cloud_effect_world.publish(cloud_msg);
+    mCloudEffectWorldPub->publish(cloud_msg);
     mPublishCount -= options::PUBFRAME_PERIOD;
 }
 
@@ -1100,14 +862,14 @@ void Mapping::saveTrajectory(const std::string& traj_file)
     ofs.open(traj_file, std::ios::out);
     if (!ofs.is_open())
     {
-        LOG(ERROR) << "Failed to open traj_file: " << traj_file;
+        RCLCPP_ERROR_STREAM(get_logger(), "Failed to open traj_file: " << traj_file);
         return;
     }
 
     ofs << "#timestamp x y z q_x q_y q_z q_w" << std::endl;
     for (const auto& p : mPath.poses)
     {
-        ofs << std::fixed << std::setprecision(6) << p.header.stamp.toSec() << " " << std::setprecision(15)
+        ofs << std::fixed << std::setprecision(6) << toSec(p.header.stamp) << " " << std::setprecision(15)
             << p.pose.position.x << " " << p.pose.position.y << " " << p.pose.position.z << " " << p.pose.orientation.x
             << " " << p.pose.orientation.y << " " << p.pose.orientation.z << " " << p.pose.orientation.w << std::endl;
     }
@@ -1115,7 +877,6 @@ void Mapping::saveTrajectory(const std::string& traj_file)
     ofs.close();
 }
 
-///////////////////////////  private method /////////////////////////////////////////////////////////////////////
 template<typename T>
 void Mapping::setPoseStamp(T& out)
 {
@@ -1128,7 +889,7 @@ void Mapping::setPoseStamp(T& out)
     out.pose.orientation.w = mStatePoint.rot.coeffs()[3];
 }
 
-void Mapping::PointBodyToWorld(const PointType* pi, PointType* const po)
+void Mapping::pointBodyToWorld(const PointType* pi, PointType* const po)
 {
     common::V3D p_body(pi->x, pi->y, pi->z);
     common::V3D p_global(mStatePoint.rot * (mStatePoint.offset_R_L_I * p_body + mStatePoint.offset_T_L_I) +
@@ -1140,7 +901,7 @@ void Mapping::PointBodyToWorld(const PointType* pi, PointType* const po)
     po->intensity = pi->intensity;
 }
 
-void Mapping::PointBodyToWorld(const common::V3F& pi, PointType* const po)
+void Mapping::pointBodyToWorld(const common::V3F& pi, PointType* const po)
 {
     common::V3D p_body(pi.x(), pi.y(), pi.z());
     common::V3D p_global(mStatePoint.rot * (mStatePoint.offset_R_L_I * p_body + mStatePoint.offset_T_L_I) +
@@ -1152,7 +913,7 @@ void Mapping::PointBodyToWorld(const common::V3F& pi, PointType* const po)
     po->intensity = std::abs(po->z);
 }
 
-void Mapping::PointBodyLidarToIMU(PointType const* const pi, PointType* const po)
+void Mapping::pointBodyLidarToIMU(PointType const* const pi, PointType* const po)
 {
     common::V3D p_body_lidar(pi->x, pi->y, pi->z);
     common::V3D p_body_imu(mStatePoint.offset_R_L_I * p_body_lidar + mStatePoint.offset_T_L_I);
@@ -1173,10 +934,9 @@ void Mapping::finish()
         std::string file_name = std::string("scans.pcd");
         std::string all_points_dir(std::string(std::string(ROOT_DIR) + "PCD/") + file_name);
         pcl::PCDWriter pcd_writer;
-        LOG(INFO) << "current scan saved to /PCD/" << file_name;
+        RCLCPP_INFO_STREAM(get_logger(), "current scan saved to /PCD/" << file_name);
         pcd_writer.writeBinary(all_points_dir, *mPclWaitSave);
     }
-
-    LOG(INFO) << "finish done";
+    RCLCPP_INFO(get_logger(), "Finish done.");
 }
 }   // namespace faster_lio

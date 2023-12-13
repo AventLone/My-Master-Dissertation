@@ -1,6 +1,4 @@
-#ifndef FASTER_LIO_USE_IKFOM_H
-#define FASTER_LIO_USE_IKFOM_H
-
+#pragma once
 #include "IKFoM_toolkit/esekfom/esekfom.hpp"
 
 namespace faster_lio
@@ -118,5 +116,3 @@ vect3 SO3ToEuler(const SO3& orient)
 }
 
 }   // namespace faster_lio
-
-#endif

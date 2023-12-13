@@ -1,11 +1,10 @@
 #include "pointcloud_preprocess.h"
-
-#include <glog/logging.h>
+// #include <glog/logging.h>
+#include "macro_print.h"
 #include <execution>
 
 namespace faster_lio
 {
-
 void PointCloudPreprocess::set(LidarType lid_type, double bld, int pfilt_num)
 {
     mLidarType = lid_type;
@@ -13,13 +12,8 @@ void PointCloudPreprocess::set(LidarType lid_type, double bld, int pfilt_num)
     mPointfilterNum = pfilt_num;
 }
 
-// void PointCloudPreprocess::process(const livox_ros_driver::CustomMsg::ConstPtr& msg, PointCloudType::Ptr& pcl_out)
-// {
-//     AviaHandler(msg);
-//     *pcl_out = mOutCloud;
-// }
-
-void PointCloudPreprocess::process(const sensor_msgs::msg::PointCloud2::ConstPtr& msg, PointCloudType::Ptr& pcl_out)
+void PointCloudPreprocess::process(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg,
+                                   PointCloudType::Ptr& pcl_out)
 {
     switch (mLidarType)
     {
@@ -32,71 +26,13 @@ void PointCloudPreprocess::process(const sensor_msgs::msg::PointCloud2::ConstPtr
             break;
 
         default:
-            LOG(ERROR) << "Error LiDAR Type";
+            THROW_ERROR("Error LiDAR Type");
             break;
     }
     *pcl_out = mOutCloud;
 }
 
-/*
-void PointCloudPreprocess::AviaHandler(const livox_ros_driver::CustomMsg::ConstPtr& msg)
-{
-    mOutCloud.clear();
-    mFullCloud.clear();
-    int plsize = msg->point_num;
-
-    mOutCloud.reserve(plsize);
-    mFullCloud.resize(plsize);
-
-    std::vector<bool> is_valid_pt(plsize, false);
-    std::vector<uint> index(plsize - 1);
-    for (uint i = 0; i < plsize - 1; ++i)
-    {
-        index[i] = i + 1;   // 从1开始
-    }
-
-    std::for_each(std::execution::par_unseq,
-                  index.begin(),
-                  index.end(),
-                  [&](const uint& i)
-                  {
-                      if ((msg->points[i].line < mScanNum) &&
-                          ((msg->points[i].tag & 0x30) == 0x10 || (msg->points[i].tag & 0x30) == 0x00))
-                      {
-                          if (i % mPointfilterNum == 0)
-                          {
-                              mFullCloud[i].x = msg->points[i].x;
-                              mFullCloud[i].y = msg->points[i].y;
-                              mFullCloud[i].z = msg->points[i].z;
-                              mFullCloud[i].intensity = msg->points[i].reflectivity;
-                              mFullCloud[i].curvature =
-                                  msg->points[i].offset_time /
-                                  float(1000000);   // use curvature as time of each laser points, curvature unit: ms
-
-                              if ((abs(mFullCloud[i].x - mFullCloud[i - 1].x) > 1e-7) ||
-                                  (abs(mFullCloud[i].y - mFullCloud[i - 1].y) > 1e-7) ||
-                                  (abs(mFullCloud[i].z - mFullCloud[i - 1].z) > 1e-7) &&
-                                      (mFullCloud[i].x * mFullCloud[i].x + mFullCloud[i].y * mFullCloud[i].y +
-                                           mFullCloud[i].z * mFullCloud[i].z >
-                                       (mBlind * mBlind)))
-                              {
-                                  is_valid_pt[i] = true;
-                              }
-                          }
-                      }
-                  });
-
-    for (uint i = 1; i < plsize; i++)
-    {
-        if (is_valid_pt[i])
-        {
-            mOutCloud.points.push_back(mFullCloud[i]);
-        }
-    }
-}
-*/
-
-void PointCloudPreprocess::Oust64Handler(const sensor_msgs::msg::PointCloud2::ConstPtr& msg)
+void PointCloudPreprocess::Oust64Handler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg)
 {
     mOutCloud.clear();
     mFullCloud.clear();
@@ -129,7 +65,7 @@ void PointCloudPreprocess::Oust64Handler(const sensor_msgs::msg::PointCloud2::Co
     }
 }
 
-void PointCloudPreprocess::VelodyneHandler(const sensor_msgs::msg::PointCloud2::ConstPtr& msg)
+void PointCloudPreprocess::VelodyneHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg)
 {
     mOutCloud.clear();
     mFullCloud.clear();

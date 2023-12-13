@@ -17,7 +17,7 @@
 #include <Eigen/Dense>
 #include <queue>
 #include <mutex>
-#include <boost/asio.hpp>
+#include <boost/asio.hpp>   // Thread pool
 
 class Mapping : public rclcpp::Node
 {
@@ -27,7 +27,6 @@ public:
     Mapping& operator=(const Mapping&) = delete;
     ~Mapping()
     {
-        // mThreadPool.join();
         shutdown();
         if (mThread.joinable())
         {

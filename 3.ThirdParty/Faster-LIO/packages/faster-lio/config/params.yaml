@@ -44,7 +44,7 @@ FilterSize:
 PointFilterNum: 6
 MaxIteration: 3
 CubeSideLength: 1000
-SavePath: true            # 保存轨迹，用于精度计算和比较
+SavePath: false            # 保存轨迹，用于精度计算和比较
 EnableExtractFeature: false
 
 IvoxGridResolution: 0.5         # default = 0.2
