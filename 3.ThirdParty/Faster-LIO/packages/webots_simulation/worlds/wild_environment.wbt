@@ -12,7 +12,6 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/project
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/BrushedAluminium.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Asphalt.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Grass.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/GlossyPaint.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Wall.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Roughcast.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/devices/velodyne/protos/VelodyneVLP-16.proto"
@@ -27,8 +26,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.22860799784597008 -0.7469885323349433 -0.6242968171318387 5.371595336213232
-  position -14.361092336446305 1.7792071389129074 11.077027088546728
+  orientation 0.2659931039021166 -0.7592150317017069 -0.5940035389748906 5.217379460732692
+  position -14.268542073546628 0.05265756294909457 13.67349449356565
 }
 TexturedBackground {
   texture "noon_cloudy_countryside"
@@ -225,13 +224,10 @@ DEF Trees Group {
     }
   ]
 }
-DEF trackCart Robot {
+DEF BD-Roamer Robot {
   translation -8.90845 7.16731 2.53371
   rotation 0.29725704531698866 -0.1915050291950397 -0.935395142601468 0.0691311
   children [
-    InertialUnit {
-      name "imu"
-    }
     VelodyneVLP-16 {
       translation 0 0 0.6
       name "Lidar"
@@ -241,52 +237,6 @@ DEF trackCart Robot {
         Gyro {
         }
         Accelerometer {
-        }
-      ]
-    }
-    DEF RealSense Group {
-      children [
-        Camera {
-          translation 0.18 0 0.36
-          children [
-            Shape {
-              appearance BrushedAluminium {
-              }
-              geometry Mesh {
-                url [
-                  "/home/avent/Public/Dissertation/3.ThirdParty/Faster-LIO/packages/webots_simulation/worlds/track_cart_mesh/camera_link.STL"
-                ]
-              }
-              castShadows FALSE
-            }
-          ]
-          name "rgb-camera"
-          width 640
-          height 480
-        }
-        RangeFinder {
-          translation 0.18 0 0.36
-          name "depth-camera"
-          width 640
-          height 480
-          maxRange 10
-        }
-        Solid {
-          translation 0.18 -9.91764e-07 0.36
-          rotation 1 0 0 1.5708
-          children [
-            Shape {
-              appearance GlossyPaint {
-                baseColor 0 0 0
-              }
-              geometry Capsule {
-                height 0.065
-                radius 0.0096
-              }
-              castShadows FALSE
-            }
-          ]
-          name "decorate for camera"
         }
       ]
     }
@@ -595,7 +545,7 @@ DEF trackCart Robot {
       }
     }
   ]
-  name "track cart"
+  name "BD_Roamer"
   boundingObject Box {
     size 0.44655181297627616 0.1 0.05487380027318713
   }

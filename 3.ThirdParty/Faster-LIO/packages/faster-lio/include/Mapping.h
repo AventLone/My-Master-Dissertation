@@ -6,12 +6,10 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <tf2_ros/transform_broadcaster.h>
-// #include <condition_variable>
-// #include <thread>
-#include "imu_processing.hpp"
+#include "ImuProcess.h"
+#include "PointCloudPreprocess.h"
 #include "ivox3d/ivox3d.h"
 #include "options.h"
-#include "pointcloud_preprocess.h"
 
 namespace faster_lio
 {
@@ -30,9 +28,7 @@ public:
 
     void run();
 
-
-    // sync lidar with imu
-    bool syncPackages();
+    bool syncPackages();   // sync lidar with imu
 
     /* interface of mtk, customized observation model */
     void obsModel(state_ikfom& s, esekfom::dyn_share_datastruct<double>& ekfom_data);
@@ -154,7 +150,7 @@ private:
 
     void printState(const state_ikfom& s);
 
-    /* callbacks of lidar and imu */
+    /* Callbacks of lidar and imu */
     void lidarCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg);
     void imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& msg);
 };

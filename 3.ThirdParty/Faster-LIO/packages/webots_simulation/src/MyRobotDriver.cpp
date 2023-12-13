@@ -2,7 +2,6 @@
 #include <webots/Gyro.hpp>
 #include <webots/Accelerometer.hpp>
 
-
 void MyRobotDriver::init(webots_ros2_driver::WebotsNode* node, std::unordered_map<std::string, std::string>& parameters)
 {
     mNode = node;
@@ -28,7 +27,7 @@ void MyRobotDriver::init(webots_ros2_driver::WebotsNode* node, std::unordered_ma
         rclcpp::ServicesQoS().reliable(),
         std::bind(&MyRobotDriver::cmdVelCallback, this, std::placeholders::_1));
 
-    mImuPub = mNode->create_publisher<sensor_msgs::msg::Imu>("track_cart/imu_u", rclcpp::SensorDataQoS().best_effort());
+    mImuPub = mNode->create_publisher<sensor_msgs::msg::Imu>("BD_Roamer/imu", rclcpp::SensorDataQoS().best_effort());
     mTimer = mNode->create_wall_timer(std::chrono::milliseconds(25), std::bind(&MyRobotDriver::publishImu, this));
 }
 

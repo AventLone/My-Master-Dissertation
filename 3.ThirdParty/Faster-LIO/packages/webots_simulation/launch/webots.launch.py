@@ -14,7 +14,7 @@ def generate_launch_description():
     webots = WebotsLauncher(world=os.path.join(this_pkg, 'worlds', 'wild_environment.wbt'))
 
     my_robot_driver = WebotsController(
-        robot_name='track cart',
+        robot_name='BD_Roamer',
         parameters=[{'robot_description': robot_description_path}]
     )
 

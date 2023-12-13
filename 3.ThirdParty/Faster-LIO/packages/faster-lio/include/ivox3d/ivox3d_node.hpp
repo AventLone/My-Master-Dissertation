@@ -46,7 +46,7 @@ template<typename PointT, int dim = 3>
 class IVoxNode
 {
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     struct DistPoint;
 
@@ -74,7 +74,7 @@ template<typename PointT, int dim = 3>
 class IVoxNodePhc
 {
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     struct DistPoint;
     struct PhcCube;
