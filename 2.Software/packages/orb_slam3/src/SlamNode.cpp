@@ -1,9 +1,13 @@
 #include "SlamNode.h"
-#include <opencv2/core.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <tf2_eigen/tf2_eigen.hpp>
 #include <pcl/common/transforms.h>
 #include <pcl_conversions/pcl_conversions.h>
+
+static inline double getSec(const builtin_interfaces::msg::Time& time_stamp)
+{
+    return static_cast<double>(time_stamp.sec) + static_cast<double>(time_stamp.nanosec) * 1e-9;
+}
 
 SlamNode::SlamNode(const std::string& name) : rclcpp::Node(name)
 {
@@ -43,13 +47,13 @@ SlamNode::SlamNode(const std::string& name) : rclcpp::Node(name)
     mSynchronizer->registerCallback(
         std::bind(&SlamNode::rgbDepthCallback, this, std::placeholders::_1, std::placeholders::_2));
 
-    mMutiThreadCallback = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
-    mSingleThreadCallback = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    // mMutiThreadCallback = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
+    // mSingleThreadCallback = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
     mImuSub =
-        create_subscription<sensor_msgs::msg::Imu>("track_cart/imu",
+        create_subscription<sensor_msgs::msg::Imu>("BD_Roamer/imu",
                                                    rclcpp::SensorDataQoS().best_effort(),
-                                                   std::bind(&SlamNode::subImuCallback, this, std::placeholders::_1));
+                                                   std::bind(&SlamNode::imuCallback, this, std::placeholders::_1));
 
     mCloudMapPub =
         create_publisher<sensor_msgs::msg::PointCloud2>("orb_slam3/cloud_map", rclcpp::SensorDataQoS().reliable());
@@ -58,10 +62,12 @@ SlamNode::SlamNode(const std::string& name) : rclcpp::Node(name)
 
     mTfBroadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(this);
 
-    mTimer[0] = create_wall_timer(
-        std::chrono::milliseconds(200), std::bind(&SlamNode::publishCloudMap, this), mMutiThreadCallback);
-    mTimer[1] = create_wall_timer(
-        std::chrono::milliseconds(100), std::bind(&SlamNode::publishNavMsgs, this), mMutiThreadCallback);
+    // mTimer[0] = create_wall_timer(
+    //     std::chrono::milliseconds(200), std::bind(&SlamNode::publishCloudMap, this), mMutiThreadCallback);
+    // mTimer[1] = create_wall_timer(
+    //     std::chrono::milliseconds(100), std::bind(&SlamNode::publishNavMsgs, this), mMutiThreadCallback);
+    mTimer[0] = create_wall_timer(std::chrono::milliseconds(200), std::bind(&SlamNode::publishCloudMap, this));
+    mTimer[1] = create_wall_timer(std::chrono::milliseconds(180), std::bind(&SlamNode::publishNavMsgs, this));
 }
 
 void SlamNode::rgbDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr& rgb_msg,
@@ -73,7 +79,7 @@ void SlamNode::rgbDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr& r
         // cv_ptrRGB = cv_bridge::toCvCopy(rgb_msg, "8UC3");
         cv_ptrRGB = cv_bridge::toCvShare(rgb_msg);
     }
-    catch (cv_bridge::Exception& e)
+    catch (const cv_bridge::Exception& e)
     {
         RCLCPP_ERROR(get_logger(), "cv_bridge exception: %s", e.what());
         return;
@@ -85,7 +91,7 @@ void SlamNode::rgbDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr& r
         // cv_ptrD = cv_bridge::toCvCopy(depth_msg, "16UC1");32FC1
         cv_ptrD = cv_bridge::toCvShare(depth_msg);
     }
-    catch (cv_bridge::Exception& e)
+    catch (const cv_bridge::Exception& e)
     {
         RCLCPP_ERROR(this->get_logger(), "cv_bridge exception: %s", e.what());
         return;
@@ -97,8 +103,8 @@ void SlamNode::rgbDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr& r
         cv::cvtColor(cv_ptrRGB->image, rgb_img, cv::COLOR_BGRA2RGB);
         cv::Mat depth = cv_ptrD->image * 1000;   // Convert the unit "meter" to "millimeter"
         depth.convertTo(depth_img, CV_16UC1);
-        mTcw = mSlamer->TrackRGBD(rgb_img, depth_img, cv_ptrRGB->header.stamp.sec, mImuMeas);
-        // mTcw = mSlamer->TrackRGBD(rgb_img, depth_img, cv_ptrRGB->header.stamp.sec);
+        mTcw = mSlamer->TrackRGBD(rgb_img, depth_img, getSec(cv_ptrRGB->header.stamp), mImuMeas);
+        // mTcw = mSlamer->TrackRGBD(rgb_img, depth_img, getSec(cv_ptrRGB->header.stamp));
         mImuMeas.clear();
     }
     else
@@ -108,7 +114,7 @@ void SlamNode::rgbDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr& r
     }
 }
 
-void SlamNode::subImuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& imu_msg)
+void SlamNode::imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& imu_msg)
 {
     ORB_SLAM3::IMU::Point point(imu_msg->linear_acceleration.x,
                                 imu_msg->linear_acceleration.y,
@@ -116,7 +122,7 @@ void SlamNode::subImuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& imu_m
                                 imu_msg->angular_velocity.x,
                                 imu_msg->angular_velocity.y,
                                 imu_msg->angular_velocity.z,
-                                imu_msg->header.stamp.sec);
+                                getSec(imu_msg->header.stamp));
     mImuMeas.emplace_back(point);
 }
 

@@ -26,14 +26,14 @@ void PFRRTStar::initWithGoal(const Eigen::Vector3d& start_pos, const Eigen::Vect
 
     mPlanningState = (node_target == nullptr) ? Roll : Global;
 
-    close_check_record_.clear();
+    mCloseCheckRecord.clear();
 
     bool inherit_flag = false;
 
     switch (mPlanningState)
     {
         case Global:
-        {
+            // {
             switch (last_planning_state)
             {
                 case Global:
@@ -59,10 +59,10 @@ void PFRRTStar::initWithGoal(const Eigen::Vector3d& start_pos, const Eigen::Vect
                     mTargetNode = node_target;
                     break;
             }
-        }
-        break;
+            // }
+            break;
         case Roll:
-        {
+            // {
             switch (last_planning_state)
             {
                 case Roll:
@@ -74,8 +74,8 @@ void PFRRTStar::initWithGoal(const Eigen::Vector3d& start_pos, const Eigen::Vect
                 default:
                     break;
             }
-        }
-        break;
+            // }
+            break;
         default:
             break;
     }
@@ -84,6 +84,7 @@ void PFRRTStar::initWithGoal(const Eigen::Vector3d& start_pos, const Eigen::Vect
     {
         mPath = Path();
         // free_vector(mTree);
+        mTree.clear();
         mOriginNode = node_origin;
         mTree.push_back(mOriginNode);
     }
@@ -100,7 +101,7 @@ void PFRRTStar::initWithoutGoal(const Eigen::Vector3d& start_pos)
     mCurrIter = 0;
     mCurrTime = 0.0;
 
-    close_check_record_.clear();
+    mCloseCheckRecord.clear();
     mPath = Path();
 
     PlanningState last_planning_state = mPlanningState;
@@ -121,6 +122,7 @@ void PFRRTStar::initWithoutGoal(const Eigen::Vector3d& start_pos)
     if (last_planning_state != WithoutGoal || !inheritTree(node_origin))
     {
         // free_vector(mTree);
+        mTree.clear();
         mOriginNode = node_origin;
         mTree.push_back(mOriginNode);
     }
@@ -128,30 +130,30 @@ void PFRRTStar::initWithoutGoal(const Eigen::Vector3d& start_pos)
 
 void PFRRTStar::updateNode(Node::Ptr input_node)
 {
-    if (input_node->mParent != nullptr)   // Skip the root node
-        input_node->mCost = input_node->mParent->mCost + calCostBetweenTwoNode(input_node, input_node->mParent);
+    if (input_node->parent != nullptr)   // Skip the root node
+        input_node->cost = input_node->parent->cost + calCostBetweenTwoNode(input_node, input_node->parent);
 
     closeCheck(input_node);
 
     // Update by recursion
-    for (auto& node : input_node->mChildren) updateNode(node);
+    for (auto& node : input_node->children) updateNode(node);
 }
 
 void PFRRTStar::addInvalidNodes(Node::Ptr& input_node, bool ifdelete, std::vector<Node::Ptr>& invalid_nodes)
 {
     if (input_node == nullptr) return;
     bool delete_flag = false;
-    if (ifdelete || input_node->mPlane == nullptr)
+    if (ifdelete || input_node->plane == nullptr)
         delete_flag = true;
     else
     {
-        if (input_node->mParent != nullptr)
-            delete_flag = !mWorld->collisionFree(input_node, input_node->mParent);
+        if (input_node->parent != nullptr)
+            delete_flag = !mWorld->collisionFree(input_node, input_node->parent);
         else   // If the root node is input
-            delete_flag = !mWorld->isFree(input_node->mPosition);
+            delete_flag = !mWorld->isFree(input_node->position);
     }
     if (delete_flag) invalid_nodes.push_back(input_node);
-    for (auto& node : input_node->mChildren) addInvalidNodes(node, delete_flag, invalid_nodes);
+    for (auto& node : input_node->children) addInvalidNodes(node, delete_flag, invalid_nodes);
 }
 
 void PFRRTStar::trimTree()
@@ -160,7 +162,7 @@ void PFRRTStar::trimTree()
     addInvalidNodes(mOriginNode, false, invalid_nodes);
     for (auto& node : invalid_nodes)
     {
-        if (node->mParent != nullptr) deleteChildren(node->mParent, node);
+        if (node->parent != nullptr) deleteChildren(node->parent, node);
         for (std::vector<Node::Ptr>::iterator it = mTree.begin(); it != mTree.end(); ++it)
         {
             if (*it == node)
@@ -203,16 +205,16 @@ bool PFRRTStar::inheritTree(Node::Ptr new_root)
         while (node != nullptr)
         {
             node_record.push_back(node);
-            node = node->mParent;
+            node = node->parent;
         }
         for (size_t i = node_record.size() - 1; i > 0; i--)
         {
             deleteChildren(node_record[i], node_record[i - 1]);
-            node_record[i]->mParent = node_record[i - 1];
-            node_record[i - 1]->mChildren.push_back(node_record[i]);
+            node_record[i]->parent = node_record[i - 1];
+            node_record[i - 1]->children.push_back(node_record[i]);
         }
-        new_root->mChildren.push_back(node_insert);
-        node_insert->mParent = new_root;
+        new_root->children.push_back(node_insert);
+        node_insert->parent = new_root;
         mTree.push_back(new_root);
         updateNode(new_root);
         mOriginNode = new_root;
@@ -227,14 +229,14 @@ bool PFRRTStar::inheritTree(Node::Ptr new_root)
 bool PFRRTStar::inheritPath(Node::Ptr new_root, Path::Type type)
 {
     bool result = false;
-    if (mPath.mType == type)
+    if (mPath.type == type)
     {
-        // copy the path
+        /* copy the path */
         std::vector<Node::Ptr> tmp_nodes;
-        for (size_t i = 0; i < mPath.mNodes.size(); i++)
+        for (size_t i = 0; i < mPath.nodes.size(); i++)
         {
-            Node::Ptr node_now = mPath.mNodes[i];
-            tmp_nodes.push_back(fitPlane(node_now->mPlane->init_coord));
+            Node::Ptr node_now = mPath.nodes[i];
+            tmp_nodes.push_back(fitPlane(node_now->plane->init_coord));
             if (tmp_nodes[i] == nullptr ||
                 (tmp_nodes.size() > 1 && !mWorld->collisionFree(tmp_nodes[i], tmp_nodes[i - 1])))
                 return false;
@@ -253,8 +255,8 @@ bool PFRRTStar::inheritPath(Node::Ptr new_root, Path::Type type)
             size_t start_index = (type == Path::Global ? 1 : 0);
             for (size_t i = start_index; i < tmp_nodes.size() - 1; i++)
             {
-                tmp_nodes[i]->mParent = tmp_nodes[i + 1];
-                tmp_nodes[i + 1]->mChildren.push_back(tmp_nodes[i]);
+                tmp_nodes[i]->parent = tmp_nodes[i + 1];
+                tmp_nodes[i + 1]->children.push_back(tmp_nodes[i]);
             }
             mPath = Path();
             // free_vector(mTree);
@@ -289,7 +291,7 @@ Eigen::Vector2d PFRRTStar::getRandom2DPoint()
 Eigen::Vector3d PFRRTStar::sampleInEllipsoid()
 {
     float cmin = EuclideanDistance(mTargetNode, mOriginNode);
-    Eigen::Vector3d a_1 = (mTargetNode->mPosition - mOriginNode->mPosition) / cmin;
+    Eigen::Vector3d a_1 = (mTargetNode->position - mOriginNode->position) / cmin;
     Eigen::RowVector3d id_t(1, 0, 0);
     Eigen::Matrix3d M = a_1 * id_t;
     Eigen::JacobiSVD<Eigen::MatrixXd> SVD(M, Eigen::ComputeFullU | Eigen::ComputeFullV);
@@ -299,7 +301,7 @@ Eigen::Vector3d PFRRTStar::sampleInEllipsoid()
     A(0, 0) = A(1, 1) = 1, A(2, 2) = U.determinant() * V.determinant();
     Eigen::Matrix3d C = U * A * V;
 
-    float cbest = mPath.mDis + 1.0f;
+    float cbest = mPath.dis + 1.0f;
 
     Eigen::Matrix3d L = Eigen::Matrix3d::Zero();
     L(0, 0) = cbest * 0.5, L(1, 1) = L(2, 2) = sqrt(powf(cbest, 2) - powf(cmin, 2)) * 0.5;
@@ -313,7 +315,7 @@ Eigen::Vector3d PFRRTStar::sampleInEllipsoid()
 
     Eigen::Vector3d random_ellipsoid = C * L * random_ball;
 
-    Eigen::Vector3d center = (mOriginNode->mPosition + mTargetNode->mPosition) * 0.5;
+    Eigen::Vector3d center = (mOriginNode->position + mTargetNode->position) * 0.5;
     Eigen::Vector3d point = random_ellipsoid + center;
     return point;
 }
@@ -324,10 +326,10 @@ Eigen::Vector2d PFRRTStar::sampleInSector()
 
     std::vector<float> theta_record;
 
-    Eigen::Vector2d start_2D = project2plane(mOriginNode->mPosition);
-    for (size_t i = 0; i < mPath.mNodes.size() - 1; i++)
+    Eigen::Vector2d start_2D = project2plane(mOriginNode->position);
+    for (size_t i = 0; i < mPath.nodes.size() - 1; i++)
     {
-        Eigen::Vector2d pt_2D = project2plane(mPath.mNodes[i]->mPosition);
+        Eigen::Vector2d pt_2D = project2plane(mPath.nodes[i]->position);
         Eigen::Vector2d diff = pt_2D - start_2D;
         if (diff.norm() < sample_sector_lb_) continue;
         float theta = atan2f(diff(1), diff(0));
@@ -344,7 +346,7 @@ Eigen::Vector2d PFRRTStar::sampleInSector()
 
     float theta = theta_record[rand_int(engine)] + (theta_rate - 0.5) * 20.0 * M_PI / 180.0;
 
-    Eigen::Vector2d sub_goal_2D = project2plane(mPath.mNodes.front()->mPosition);
+    Eigen::Vector2d sub_goal_2D = project2plane(mPath.nodes.front()->position);
 
     float sample_sector_ub =
         (EuclideanDistance(start_2D, sub_goal_2D) + EuclideanDistance(start_2D, mEndPos_2d)) * 0.5 + 1.0f;
@@ -354,7 +356,7 @@ Eigen::Vector2d PFRRTStar::sampleInSector()
     float R = sqrt(rand_num) * (sample_sector_ub - sample_sector_lb_) + sample_sector_lb_;
 
     Eigen::Vector2d rand_point(R * cos(theta), R * sin(theta));
-    rand_point += project2plane(mOriginNode->mPosition);
+    rand_point += project2plane(mOriginNode->position);
 
     return rand_point;
 }
@@ -365,16 +367,16 @@ Eigen::Vector2d PFRRTStar::sample()
     switch (mPlanningState)
     {
         case Global:
-        {
-            if (!mPath.mNodes.empty())
+            // {
+            if (!mPath.nodes.empty())
                 point_sample = project2plane(sampleInEllipsoid());
             else
                 point_sample =
-                    (getRandomNum() < mGoalBiased) ? project2plane(mTargetNode->mPosition) : getRandom2DPoint();
-        }
-        break;
+                    (getRandomNum() < mGoalBiased) ? project2plane(mTargetNode->position) : getRandom2DPoint();
+            // }
+            break;
         case Roll:
-            point_sample = mPath.mNodes.empty() ? getRandom2DPoint() : sampleInSector();
+            point_sample = mPath.nodes.empty() ? getRandom2DPoint() : sampleInSector();
             break;
         case WithoutGoal:
             point_sample = getRandom2DPoint();
@@ -393,7 +395,7 @@ Node::Ptr PFRRTStar::findNearest(const Eigen::Vector2d& point)
     for (const auto& node : mTree)
     {
         // Here use Manhattan distance instead of Euclidean distance to improve the calculate speed.
-        float tmp_dis = std::fabs(point(0) - node->mPosition(0)) + std::fabs(point(1) - node->mPosition(1));
+        float tmp_dis = std::fabs(point(0) - node->position(0)) + std::fabs(point(1) - node->position(1));
         if (tmp_dis < min_dis)
         {
             min_dis = tmp_dis;
@@ -427,26 +429,26 @@ Node::Ptr PFRRTStar::fitPlane(const Eigen::Vector2d& p_original)
     if (mWorld->project2surface(p_original(0), p_original(1), p_surface))
     {
         node = std::make_shared<Node>();
-        node->mPlane = std::make_shared<Plane>(p_surface, mWorld, mRadiusFitPlane, mFitPlaneArg);
-        node->mPosition = p_surface + mH_surf * node->mPlane->normal_vector;
+        node->plane = std::make_shared<Plane>(p_surface, mWorld, mRadiusFitPlane, mFitPlaneArg);
+        node->position = p_surface + mH_surf * node->plane->normal_vector;
     }
     return node;
 }
 
 void PFRRTStar::fitPlane(Node::Ptr node)
 {
-    Eigen::Vector2d init_coord = node->mPlane->init_coord;
-    // cout << RowVector3d(node->mPlane->normal_vector) << endl;
-    // cout << RowVector3d(node->mPosition) << endl;
-    // delete node->mPlane;
-    // node->mPlane = nullptr;
+    Eigen::Vector2d init_coord = node->plane->init_coord;
+    // cout << RowVector3d(node->plane->normal_vector) << endl;
+    // cout << RowVector3d(node->position) << endl;
+    // delete node->plane;
+    // node->plane = nullptr;
     Eigen::Vector3d p_surface;
     if (mWorld->project2surface(init_coord(0), init_coord(1), p_surface))
     {
-        node->mPlane = std::make_shared<Plane>(p_surface, mWorld, mRadiusFitPlane, mFitPlaneArg);
-        // cout << RowVector3d(node->mPlane->normal_vector) << endl;
-        // cout << RowVector3d(node->mPosition) << endl;
-        node->mPosition = p_surface + mH_surf * node->mPlane->normal_vector;
+        node->plane = std::make_shared<Plane>(p_surface, mWorld, mRadiusFitPlane, mFitPlaneArg);
+        // cout << RowVector3d(node->plane->normal_vector) << endl;
+        // cout << RowVector3d(node->position) << endl;
+        node->position = p_surface + mH_surf * node->plane->normal_vector;
     }
 }
 
@@ -466,16 +468,16 @@ void PFRRTStar::findParent(Node::Ptr node_new, const std::vector<std::pair<Node:
     for (const auto& rec : record)
     {
         Node::Ptr node = rec.first;
-        float tmp_cost = node->mCost + rec.second;
+        float tmp_cost = node->cost + rec.second;
         if (tmp_cost < min_cost)
         {
             parent_node = node;
             min_cost = tmp_cost;
         }
     }
-    node_new->mParent = parent_node;
-    node_new->mCost = min_cost;
-    parent_node->mChildren.push_back(node_new);
+    node_new->parent = parent_node;
+    node_new->cost = min_cost;
+    parent_node->children.push_back(node_new);
 }
 
 void PFRRTStar::reWire(Node::Ptr node_new, const std::vector<std::pair<Node::Ptr, float>>& record)
@@ -483,39 +485,39 @@ void PFRRTStar::reWire(Node::Ptr node_new, const std::vector<std::pair<Node::Ptr
     for (const auto& rec : record)
     {
         Node::Ptr node = rec.first;
-        float tmp_cost = node_new->mCost + rec.second;   // cost value if the new node is the parent
-        float costdifference =
-            node->mCost -
+        float tmp_cost = node_new->cost + rec.second;   // cost value if the new node is the parent
+        float cost_difference =
+            node->cost -
             tmp_cost;   // compare the two and update if the latter is smaller,change new node to the parent node
-        if (costdifference > 0)
+        if (cost_difference > 0)
         {
-            deleteChildren(node->mParent, node);
-            node->mParent = node_new;
-            node->mCost = tmp_cost;
-            node_new->mChildren.push_back(node);
-            updateChildrenCost(node, costdifference);
+            deleteChildren(node->parent, node);
+            node->parent = node_new;
+            node->cost = tmp_cost;
+            node_new->children.push_back(node);
+            updateChildrenCost(node, cost_difference);
         }
     }
 }
 
 void PFRRTStar::deleteChildren(Node::Ptr parent_node, Node::Ptr child_node)
 {
-    for (std::vector<Node::Ptr>::iterator it = parent_node->mChildren.begin(); it != parent_node->mChildren.end(); ++it)
+    for (std::vector<Node::Ptr>::iterator it = parent_node->children.begin(); it != parent_node->children.end(); ++it)
     {
         if (*it == child_node)
         {
-            parent_node->mChildren.erase(it);
+            parent_node->children.erase(it);
             break;
         }
     }
 }
 
-void PFRRTStar::updateChildrenCost(Node::Ptr& node_root, float costdifference)
+void PFRRTStar::updateChildrenCost(Node::Ptr& node_root, float cost_difference)
 {
-    for (auto& node : node_root->mChildren)
+    for (auto& node : node_root->children)
     {
-        node->mCost -= costdifference;
-        updateChildrenCost(node, costdifference);
+        node->cost -= cost_difference;
+        updateChildrenCost(node, cost_difference);
     }
 }
 
@@ -524,19 +526,19 @@ void PFRRTStar::closeCheck(Node::Ptr node)
     switch (mPlanningState)
     {
         case Global:
-        {
+            // {
             if (EuclideanDistance(node, mTargetNode) < mGoalThreshold && mWorld->collisionFree(node, mTargetNode))
-                close_check_record_.push_back(
+                mCloseCheckRecord.push_back(
                     std::pair<Node::Ptr, float>(node, calCostBetweenTwoNode(node, mTargetNode)));
-        }
-        break;
+            // }
+            break;
         case Roll:
-        {
-            if (EuclideanDistance(project2plane(node->mPosition), mEndPos_2d) < mSubGoalThreshold)
-                close_check_record_.push_back(std::pair<Node::Ptr, float>(
-                    node, powf(EuclideanDistance(mEndPos_2d, project2plane(node->mPosition)), 3)));
-        }
-        break;
+            // {
+            if (EuclideanDistance(project2plane(node->position), mEndPos_2d) < mSubGoalThreshold)
+                mCloseCheckRecord.push_back(std::pair<Node::Ptr, float>(
+                    node, powf(EuclideanDistance(mEndPos_2d, project2plane(node->position)), 3)));
+            // }
+            break;
         default:
             break;
     }
@@ -545,7 +547,10 @@ void PFRRTStar::closeCheck(Node::Ptr node)
 float PFRRTStar::calPathDis(const std::vector<Node::Ptr>& nodes)
 {
     float dis = 0.0f;
-    for (size_t i = 0; i < nodes.size() - 1; i++) dis += EuclideanDistance(nodes[i], nodes[i + 1]);
+    for (size_t i = 0; i < nodes.size() - 1; i++)
+    {
+        dis += EuclideanDistance(nodes[i], nodes[i + 1]);
+    }
     return dis;
 }
 
@@ -556,29 +561,29 @@ void PFRRTStar::generatePath()
         case Global:
         {
             Node::Ptr node_choosed = nullptr;
-            float min_cost = mPath.mCost;
-            for (const auto& rec : close_check_record_)
+            float min_cost = mPath.cost;
+            for (const auto& rec : mCloseCheckRecord)
             {
                 Node::Ptr node = rec.first;
-                float tmp_cost = node->mCost + rec.second;
+                float tmp_cost = node->cost + rec.second;
                 if (tmp_cost < min_cost)
                 {
                     min_cost = tmp_cost;
                     node_choosed = node;
                 }
             }
-            if (min_cost != mPath.mCost)
+            if (min_cost != mPath.cost)
             {
-                mPath.mNodes.clear();
-                mPath.mNodes.push_back(mTargetNode);
+                mPath.nodes.clear();
+                mPath.nodes.push_back(mTargetNode);
                 while (node_choosed != nullptr)
                 {
-                    mPath.mNodes.push_back(node_choosed);
-                    node_choosed = node_choosed->mParent;
+                    mPath.nodes.push_back(node_choosed);
+                    node_choosed = node_choosed->parent;
                 }
-                mPath.mCost = min_cost;
-                mPath.mDis = calPathDis(mPath.mNodes);
-                mPath.mType = Path::Global;
+                mPath.cost = min_cost;
+                mPath.dis = calPathDis(mPath.nodes);
+                mPath.type = Path::Global;
             }
         }
         break;
@@ -587,10 +592,10 @@ void PFRRTStar::generatePath()
             mPath = Path();
             Node::Ptr sub_goal = nullptr;
             float min_cost = gINF;
-            for (const auto& rec : close_check_record_)
+            for (const auto& rec : mCloseCheckRecord)
             {
                 Node::Ptr node = rec.first;
-                float tmp_cost = node->mCost + rec.second;
+                float tmp_cost = node->cost + rec.second;
                 if (tmp_cost < min_cost)
                 {
                     min_cost = tmp_cost;
@@ -601,12 +606,12 @@ void PFRRTStar::generatePath()
             {
                 while (sub_goal != nullptr)
                 {
-                    mPath.mNodes.push_back(sub_goal);
-                    sub_goal = sub_goal->mParent;
+                    mPath.nodes.push_back(sub_goal);
+                    sub_goal = sub_goal->parent;
                 }
-                mPath.mCost = mPath.mNodes.front()->mCost;
-                mPath.mDis = calPathDis(mPath.mNodes);
-                mPath.mType = Path::Sub;
+                mPath.cost = mPath.nodes.front()->cost;
+                mPath.dis = calPathDis(mPath.nodes);
+                mPath.type = Path::Sub;
             }
             else
             {
@@ -615,7 +620,7 @@ void PFRRTStar::generatePath()
                 float min_dis = gINF;
                 for (const auto& node : mTree)
                 {
-                    float tmp_dis = EuclideanDistance(project2plane(node->mPosition), mEndPos_2d);
+                    float tmp_dis = EuclideanDistance(project2plane(node->position), mEndPos_2d);
                     if (tmp_dis < min_dis) min_dis = tmp_dis;
                 }
                 mSubGoalThreshold = min_dis + 1.0f;
@@ -639,8 +644,8 @@ Path PFRRTStar::planner(int max_iter, double max_time)
     gettimeofday(&start, nullptr);
     while (mCurrIter < max_iter && mCurrTime < max_time)
     {
-        // Update current iteration
-        mCurrIter++;
+
+        mCurrIter++;   // Update current iteration
 
         // Update current time consuming
         timeval end;
@@ -653,7 +658,7 @@ Path PFRRTStar::planner(int max_iter, double max_time)
 
         // Find the nearest node to the random point
         Node::Ptr nearest_node = findNearest(rand_point_2D);
-        Eigen::Vector2d nearest_point_2D = project2plane(nearest_node->mPosition);
+        Eigen::Vector2d nearest_point_2D = project2plane(nearest_node->position);
 
         // Expand from the nearest point to the random point
         Eigen::Vector2d new_point_2D = steer(rand_point_2D, nearest_point_2D);
@@ -661,59 +666,52 @@ Path PFRRTStar::planner(int max_iter, double max_time)
         // Based on the new 2D point,
         Node::Ptr new_node = fitPlane(new_point_2D);
 
-        if (new_node != nullptr                              // 1.Fail to fit the plane,it will return a null pointer
-            && mWorld->isInsideBorder(new_node->mPosition)   // 2.The position is out of the range of the grid map.
-        )
+        if (new_node != nullptr                              // 1.Fail to fit the plane, it will return a null pointer
+            && mWorld->isInsideBorder(new_node->position))   // 2.The position is out of the range of the grid map.
         {
-            // Get the set of the neighbors of the new node in the tree
+            /* Get the set of the neighbors of the new node in the tree */
             std::vector<std::pair<Node::Ptr, float>> neighbor_record;
             findNearNeighbors(new_node, neighbor_record);
 
             // Select an appropriate parent node for the new node from the set.
             if (!neighbor_record.empty()) findParent(new_node, neighbor_record);
-            // Different from other RRT algorithm,it is posible that the new node is too far away from the whole tree.If
-            // so,discard the new node.
+            // Different from other RRT algorithm, it is posible that the new node is too far away from the whole tree.
+            // If so, discard the new node.
             else
             {
-                // delete new_node;
                 continue;
             }
+            mTree.push_back(new_node);           // Add the new node to the tree
+            reWire(new_node, neighbor_record);   // Rewire the tree to optimize it
+            closeCheck(new_node);                // Check if the new node is close enough to the goal
 
-            // Add the new node to the tree
-            mTree.push_back(new_node);
-
-            // Rewire the tree to optimize it
-            reWire(new_node, neighbor_record);
-
-            // Check if the new node is close enough to the goal
-            closeCheck(new_node);
-
-            if (mPlanningState == Global) generatePath();
+            if (mPlanningState == Global)
+            {
+                generatePath();
+            }
         }
-        // else
-        // delete new_node;
     }
 
     if (mPlanningState == Roll) generatePath();
 
     // visualizeTree(mTree, tree_vis_pub_);
-    // pubTraversabilityOfTree(tree_tra_pub_);
+    pubTraversabilityOfTree();
 
     return mPath;
 }
 
-// void PFRRTStar::pubTraversabilityOfTree(Publisher* tree_tra_pub)
-// {
-//     if (tree_tra_pub == nullptr) return;
-//     Float32MultiArray msg;
-//     for (const auto& node : mTree)
-//     {
-//         msg.data.push_back(node->mPosition(0));
-//         msg.data.push_back(node->mPosition(1));
-//         msg.data.push_back(node->mPosition(2));
-//         msg.data.push_back(node->mPlane->traversability);
-//     }
-//     tree_tra_pub->publish(msg);
-// }
+void PFRRTStar::pubTraversabilityOfTree()
+{
+    if (mTreeTraPub == nullptr) return;
+    std_msgs::msg::Float32MultiArray msg;
+    for (const auto& node : mTree)
+    {
+        msg.data.push_back(node->position(0));
+        msg.data.push_back(node->position(1));
+        msg.data.push_back(node->position(2));
+        msg.data.push_back(node->plane->traversability);
+    }
+    mTreeTraPub->publish(msg);
+}
 }   // namespace planner
 }   // namespace putn

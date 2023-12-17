@@ -2,13 +2,17 @@
 
 GprPath::GprPath(const std::string& name) : Node(name)
 {
-    mSurfacePredictPub = create_publisher<MultiArray>("putn/surface_prediction", rclcpp::ParametersQoS().reliable());
+    declare_parameter("ConfigFilePath", std::string());
+    get_parameter("ConfigFilePath", mFilePath);
+
     mTreeSub = create_subscription<MultiArray>("putn/global_planning/tree_tra",
                                                rclcpp::ParametersQoS().reliable(),
                                                std::bind(&GprPath::treeCallBack, this, std::placeholders::_1));
-    mPathSub = create_subscription<MultiArray>("putn/global_planning/tree_tra",
+    mPathSub = create_subscription<MultiArray>("putn/global_planning/global_path",
                                                rclcpp::ParametersQoS().reliable(),
                                                std::bind(&GprPath::pathCallBack, this, std::placeholders::_1));
+
+    mSurfacePredictPub = create_publisher<MultiArray>("putn/surface_prediction", rclcpp::ServicesQoS().reliable());
 }
 
 void GprPath::treeCallBack(const MultiArray::ConstPtr& msg)
@@ -31,8 +35,8 @@ void GprPath::treeCallBack(const MultiArray::ConstPtr& msg)
         mTrainOutputs.push_back(tmp_out);
     }
 
-    GaussianProcessRegression<float> myGPR(input_dim, output_dim);
-    setHyperParameters(filepath.c_str(), myGPR);
+    GaussianProcessRegression<float> myGPR(mInputDim, mOutputDim);
+    setHyperParameters(mFilePath.c_str(), myGPR);
 
     for (size_t k = 0; k < mTrainInputs.size(); ++k)
     {
@@ -41,7 +45,6 @@ void GprPath::treeCallBack(const MultiArray::ConstPtr& msg)
 
     double threshold = 0.1;
 
-
     if (mTestInputs.size() == 0)
     {
         mTrainInputs.clear();
@@ -49,7 +52,6 @@ void GprPath::treeCallBack(const MultiArray::ConstPtr& msg)
         mTestInputs.clear();
         mTestOutputs.clear();
     }
-
 
     MultiArray out_ym;
     MultiArray out_ys;
@@ -79,12 +81,12 @@ void GprPath::treeCallBack(const MultiArray::ConstPtr& msg)
     end = std::clock();
     duration = static_cast<double>(end - start);
 
-    RCLCPP_DEBUG(get_logger(), "Time consume : %f ms", duration / 1000.0);
+    RCLCPP_INFO(get_logger(), "Time consume : %f ms", duration / 1000.0);
 }
 
 void GprPath::pathCallBack(const MultiArray::ConstPtr& msg)
 {
-    RCLCPP_INFO(get_logger(), "[node] receive the path");
+    RCLCPP_INFO(get_logger(), "Received the path.");
     if (msg->data.size() == 0) return;
 
     int num = static_cast<int>(msg->data.size() / 3);

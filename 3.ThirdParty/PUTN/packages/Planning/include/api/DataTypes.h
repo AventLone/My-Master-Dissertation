@@ -35,7 +35,7 @@ struct FitPlaneArg
 
 /**
  * @brief Class for describing the local plane.The normal vector can be used to estimate the real
- * position of the robot when moving on this plane,and the mTraversability can evaluate whether the
+ * position of the robot when moving on this plane,and the traversability can evaluate whether the
  * the robot is safe when moving on this plane.
  */
 struct Plane
@@ -49,7 +49,7 @@ struct Plane
     Eigen::Vector2d init_coord;
     std::vector<Eigen::Vector3d> plane_points;
     Eigen::Vector3d normal_vector;
-    float mTraversability;
+    float traversability;
 };
 
 /**
@@ -64,35 +64,35 @@ struct Node
     Node(const Node& node);
     ~Node() = default;
 
-    std::vector<Node::Ptr> mChildren;
+    std::vector<Node::Ptr> children;
 
-    Node::Ptr mParent{nullptr};
+    Node::Ptr parent{nullptr};
 
-    Eigen::Vector3d mPosition;
+    Eigen::Vector3d position;
 
-    float mCost{0.0f};
+    float cost{0.0f};
 
-    Plane::Ptr mPlane{nullptr};
+    Plane::Ptr plane{nullptr};
 };
 
 /**
  * @brief Class for storing information about a path from the start point to the end point.Besides
  * the set of nodes that describe the path,it also saves the Eucildean length and the cost value of
- * the path. The member variable `mType` is used to indecate whether the end point of this path is a
+ * the path. The member variable `type` is used to indecate whether the end point of this path is a
  * real goal or a temporary sub goal
  */
 struct Path
 {
     using Ptr = std::shared_ptr<Path>;
-    std::vector<Node::Ptr> mNodes;
-    float mDis;
-    float mCost{gINF};
+    std::vector<Node::Ptr> nodes;
+    float dis;
+    float cost{gINF};
     enum Type
     {
         Global,
         Sub,
         Empty
-    } mType{Empty};
+    } type{Empty};
 };
 
 
@@ -114,7 +114,7 @@ struct World
     {
         mLowerBound = gINF * Eigen::Vector3d::Ones();
         mUpperBound = -gINF * Eigen::Vector3d::Ones();
-        mIdxCount = Eigen::Vector3i::Zero();
+        index_count = Eigen::Vector3i::Zero();
     }
 
     ~World()
@@ -124,15 +124,12 @@ struct World
 
     // friend void visualization::visualizeWorld(World* world, ros::Publisher* world_vis_pub);
 
-    bool mExistMap{false};   // indicate whether the range of the grid map has been determined
+    Eigen::Vector3i index_count;
 
-    bool*** mGridMap{nullptr};   // 3 dimentional occupancy map
+    bool exist_map{false};   // indicate whether the range of the grid map has been determined
 
-    float mResolution;
+    bool*** grid_map{nullptr};   // 3 dimentional occupancy map
 
-    Eigen::Vector3i mIdxCount;
-
-    Eigen::Vector3d mLowerBound, mUpperBound;
 
     /**
      * @brief Automatically determine the upperbound and lowerbound of the grid map according to the
@@ -147,7 +144,7 @@ struct World
     void setObstacle(const Eigen::Vector3d& point)
     {
         Eigen::Vector3i idx = coord2index(point);
-        mGridMap[idx(0)][idx(1)][idx(2)] = false;
+        grid_map[idx(0)][idx(1)][idx(2)] = false;
     }
 
     /**
@@ -161,7 +158,7 @@ struct World
     bool isFree(const Eigen::Vector3d& point)
     {
         Eigen::Vector3i idx = coord2index(point);
-        bool is_free = isInsideBorder(idx) && mGridMap[idx(0)][idx(1)][idx(2)];
+        bool is_free = isInsideBorder(idx) && grid_map[idx(0)][idx(1)][idx(2)];
         return is_free;
     }
     bool isFree(const float& coord_x, const float& coord_y, const float& coord_z)
@@ -199,8 +196,8 @@ struct World
      */
     bool isInsideBorder(const Eigen::Vector3i& index)
     {
-        return index(0) >= 0 && index(1) >= 0 && index(2) >= 0 && index(0) < mIdxCount(0) && index(1) < mIdxCount(1) &&
-               index(2) < mIdxCount(2);
+        return index(0) >= 0 && index(1) >= 0 && index(2) >= 0 && index(0) < index_count(0) &&
+               index(1) < index_count(1) && index(2) < index_count(2);
     }
     bool isInsideBorder(const Eigen::Vector3d& point)
     {
@@ -248,6 +245,10 @@ struct World
     }
 
     void clearMap();
+
+private:
+    float mResolution;
+    Eigen::Vector3d mLowerBound, mUpperBound;
 };
 
 /**
@@ -270,15 +271,14 @@ inline float EuclideanDistance(const Eigen::VectorXd& p, const Eigen::VectorXd& 
 }
 inline float EuclideanDistance(const Node::ConstPtr& p, const Node::ConstPtr& q)
 {
-    return EuclideanDistance(p->mPosition, q->mPosition);
+    return EuclideanDistance(p->position, q->position);
 }
 
 inline float calCostBetweenTwoNode(const Node::ConstPtr& n1, const Node::ConstPtr& n2)
 {
     float dis = EuclideanDistance(n1, n2);
     float cost =
-        dis *
-        (1.0f + 0.1f * (1 / (1.0001f - n1->mPlane->mTraversability) + 1 / (1.0001f - n2->mPlane->mTraversability)));
+        dis * (1.0f + 0.1f * (1 / (1.0001f - n1->plane->traversability) + 1 / (1.0001f - n2->plane->traversability)));
     return cost;
 }
 }   // namespace putn

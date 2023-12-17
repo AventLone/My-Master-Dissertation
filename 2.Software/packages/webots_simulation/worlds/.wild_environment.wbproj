@@ -8,8 +8,8 @@ centralWidgetVisible: 1
 orthographicViewHeight: 1
 textFiles: -1
 consoles: Console:All:All
-renderingDevicePerspectives: BD_Roamer:depth-camera;1;0.895833;0;0
-renderingDevicePerspectives: BD_Roamer:rgb-camera;1;0.895833;0;0
+renderingDevicePerspectives: BD_Roamer:depth-camera;1;0.658333;0;0
+renderingDevicePerspectives: BD_Roamer:rgb-camera;1;0.658333;0;0
 renderingDevicePerspectives: track cart:depth camera;1;0.895833;0;0
 renderingDevicePerspectives: track cart:depth-camera;1;0.895833;0;0
 renderingDevicePerspectives: track cart:rgb camera;1;0.895833;0;0

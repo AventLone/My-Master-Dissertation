@@ -1,8 +1,9 @@
-#ifndef PUTN_PLANNER_H
-#define PUTN_PLANNER_H
-
-#include <utility>
-#include "putnDataType.h"
+#pragma once
+// #include <utility>
+#include "DataTypes.h"
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/float32_multi_array.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 // #include "Visualization.h"
 
 namespace putn
@@ -139,6 +140,10 @@ public:
     void fitPlane(Node::Ptr node);
 
 protected:
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr mTreeTraPub{nullptr};
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr mGoalVisualizePub{nullptr},
+        mTreeVisualizePub{nullptr};
+
     Node::Ptr mOriginNode, mTargetNode;
 
     int mCurrIter;
@@ -161,7 +166,7 @@ protected:
 
     World::Ptr mWorld;
 
-    std::vector<std::pair<Node::Ptr, float>> close_check_record_;   // used in function generatePath
+    std::vector<std::pair<Node::Ptr, float>> mCloseCheckRecord;   // used in function generatePath
 
     std::vector<Node::Ptr> mTree;
 
@@ -170,6 +175,7 @@ protected:
     /* record 2D information of target, when the target can't be projected to surface,it will be used in
      rolling-planning*/
     Eigen::Vector2d mEndPos_2d;
+
 
     /*------ Functions for inherit ------*/
     void updateNode(Node::Ptr input_node);
@@ -211,26 +217,24 @@ protected:
 
     void deleteChildren(Node::Ptr parent_node, Node::Ptr child_node);
 
-    void updateChildrenCost(Node::Ptr& node_root, float costdifference);
+    void updateChildrenCost(Node::Ptr& node_root, float cost_difference);
 
     /**
      * @brief Check the node. If it has met the conditions set in advance(i.e.,it's close enough to the target),
-     *        add it to the data member `close_check_record_`.
+     *        add it to the data member `mCloseCheckRecord`.
      * @param node
      */
     void closeCheck(Node::Ptr node);
 
     /**
-     * @brief Read information from "close_check_record_".According to the node information stored in,the function
+     * @brief Read information from "mCloseCheckRecord".According to the node information stored in,the function
      *        will select the node with the smallest valuation funtion,and generate a path through the node
      */
     void generatePath();
 
     float calPathDis(const std::vector<Node::Ptr>& nodes);
 
-    // void pubTraversabilityOfTree(ros::Publisher* tree_tra_pub);
+    void pubTraversabilityOfTree();
 };
 }   // namespace planner
 }   // namespace putn
-
-#endif

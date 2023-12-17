@@ -28,7 +28,7 @@ void RobotDriver::init(webots_ros2_driver::WebotsNode* node, std::unordered_map<
         std::bind(&RobotDriver::cmdVelCallback, this, std::placeholders::_1));
 
     mImuPub = mNode->create_publisher<sensor_msgs::msg::Imu>("BD_Roamer/imu", rclcpp::SensorDataQoS().best_effort());
-    mTimer = mNode->create_wall_timer(std::chrono::milliseconds(25), std::bind(&RobotDriver::publishImu, this));
+    mTimer = mNode->create_wall_timer(std::chrono::milliseconds(30), std::bind(&RobotDriver::publishImu, this));
 }
 
 void RobotDriver::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)

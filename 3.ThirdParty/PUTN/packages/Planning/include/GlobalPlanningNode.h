@@ -1,11 +1,10 @@
 #pragma once
 #include "api/backward.hpp"
 #include "api/GlobalPlanner.h"
-#include "api/putnDataType.h"
 #include <Eigen/Dense>
+#include <std_msgs/msg/float32_multi_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <std_msgs/msg/float32_multi_array.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -19,7 +18,7 @@ public:
 private:
     bool mHasGoal{false};   // Indicate whether the robot has a moving goal
 
-    double mMaxInitialTime;
+    double mMaxInitTime;
     double mGoalThre;
 
     /* useful global variables */
@@ -37,7 +36,7 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr mGridMapVisualizePub, mPlaneVisualizePub;
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr mPathVisualizePub, mGoalVisualizePub,
         mTreeVisualizePub;
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr mPathInterpolationVisualizePub, mTreeTraVisualizePub;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr mGlobalPathPub, mTreeTraPub;
 
     // tf2_ros::TransformListener mTfListener;
     // std::unique_ptr<tf2_ros::TransformListener> mTfListener;

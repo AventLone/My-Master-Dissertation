@@ -64,7 +64,7 @@ private:
     /*** Subscription callbacks ***/
     void rgbDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr& rgb_msg,
                           const sensor_msgs::msg::Image::ConstSharedPtr& depth_msg);
-    void subImuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& imu_msg);
+    void imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& imu_msg);
 
     /*** Timer callbacks ***/
     void publishNavMsgs();

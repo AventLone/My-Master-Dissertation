@@ -26,8 +26,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.29065885025862037 -0.6561655569319809 -0.6963937066505416 5.150113571074888
-  position -13.6063100082822 1.1790546474132635 12.432580097468476
+  orientation -0.057361449032260446 -0.9876874337419087 0.14554448595959338 5.523895964438192
+  position -30.32564369513996 6.869543746105934 31.11291816228414
 }
 TexturedBackground {
   texture "noon_cloudy_countryside"
@@ -72,11 +72,12 @@ DEF Trees Group {
           name "pine tree 2(1)"
         }
         Pine {
-          translation -6.42 9.93 1.79
+          translation -6.42 7.13 1.79
           name "pine tree 3"
         }
         Pine {
-          translation -13.26 16.33 2.52
+          translation -13.26 13.55 2.48
+          rotation 1 0 0 4.692820414042842e-06
           name "pine tree 4"
         }
         Pine {
@@ -129,7 +130,7 @@ DEF Trees Group {
           name "oak tree 8"
         }
         Oak {
-          translation 10.48 -10.49 3.33
+          translation -0.78 5.9 2.11
           name "oak tree 9"
         }
         Oak {
@@ -177,7 +178,7 @@ DEF Trees Group {
           name "sassafras tree 2"
         }
         BigSassafras {
-          translation -14.31 12.52 2.24
+          translation -4.74 13.05 2.24
           name "sassafras tree 3"
         }
         BigSassafras {
@@ -205,7 +206,8 @@ DEF Trees Group {
           name "cypress tree 2"
         }
         Cypress {
-          translation 4.37 4.17 2.33
+          translation 2.17 3.96 2.3
+          rotation 1 0 0 4.692820414042842e-06
           name "cypress tree 3"
         }
         Cypress {
@@ -231,8 +233,10 @@ DEF BD_Roamer Robot {
     DEF IMU Group {
       children [
         Gyro {
+          translation 0.18 0 0.36
         }
         Accelerometer {
+          translation 0.18 0 0.36
         }
       ]
     }
@@ -4584,7 +4588,7 @@ DEF Grass Group {
               name "grass_1"
             }
             Solid {
-              translation 1.42 0.01 2.8
+              translation 1.42 0.01 2.76
               children [
                 Shape {
                   appearance Grass {
@@ -4614,7 +4618,7 @@ DEF Grass Group {
               name "grass_3"
             }
             Solid {
-              translation -3.73 0.39 2.8
+              translation -3.73 0.39 2.68
               children [
                 Shape {
                   appearance Grass {
@@ -4725,7 +4729,7 @@ DEF Grass Group {
           translation 3.52 4.85 -0.39
           children [
             Solid {
-              translation 0.95 1.44 2.8
+              translation 0.95 1.44 2.75
               children [
                 Shape {
                   appearance Grass {
@@ -4755,7 +4759,7 @@ DEF Grass Group {
               name "grass_2"
             }
             Solid {
-              translation 1.86 1.99 2.78
+              translation 1.86 1.99 2.74
               children [
                 Shape {
                   appearance Grass {
@@ -4770,7 +4774,7 @@ DEF Grass Group {
               name "grass_3"
             }
             Solid {
-              translation 1.73 1.39 2.8
+              translation 1.73 1.39 2.75
               children [
                 Shape {
                   appearance Grass {
@@ -4800,7 +4804,7 @@ DEF Grass Group {
               name "grass_5"
             }
             Solid {
-              translation -3.48 1.16 2.81
+              translation -3.48 1.16 2.68
               children [
                 Shape {
                   appearance Grass {
@@ -4815,7 +4819,7 @@ DEF Grass Group {
               name "grass_6"
             }
             Solid {
-              translation -0.35 -0.46 2.82
+              translation -0.35 -0.46 2.78
               children [
                 Shape {
                   appearance Grass {

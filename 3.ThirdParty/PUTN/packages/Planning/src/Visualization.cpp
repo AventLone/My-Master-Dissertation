@@ -10,17 +10,17 @@ std::vector<Eigen::Vector4d> generateFrame(const std::vector<Eigen::Vector3d>& p
 
 void GlobalPlanningNode::visualizeWorld()
 {
-    if (!mWorld->mExistMap) return;
+    if (!mWorld->exist_map) return;
 
     pcl::PointCloud<pcl::PointXYZ> cloud_vis;
-    for (int i = 0; i < mWorld->mIdxCount(0); i++)
+    for (int i = 0; i < mWorld->index_count(0); i++)
     {
-        for (int j = 0; j < mWorld->mIdxCount(1); j++)
+        for (int j = 0; j < mWorld->index_count(1); j++)
         {
-            for (int k = 0; k < mWorld->mIdxCount(2); k++)
+            for (int k = 0; k < mWorld->index_count(2); k++)
             {
                 Eigen::Vector3i index(i, j, k);
-                if (!mWorld->mGridMap[index(0)][index(1)][index(2)])
+                if (!mWorld->grid_map[index(0)][index(1)][index(2)])
                 {
                     Eigen::Vector3d coor_round = mWorld->index2coord(index);
                     pcl::PointXYZ pt_add;
@@ -50,7 +50,7 @@ void GlobalPlanningNode::visualizePlane(const std::vector<putn::Node::Ptr>& solu
     pcl::PointXYZRGB pt;
     for (const auto& node : solution)
     {
-        for (const auto& point : node->mPlane->plane_points)
+        for (const auto& point : node->plane->plane_points)
         {
             pt.x = point(0);
             pt.y = point(1);
@@ -97,7 +97,7 @@ void GlobalPlanningNode::visualizeOriginAndGoal(const std::vector<putn::Node::Pt
     geometry_msgs::msg::Point pt;
     for (const auto& node : nodes)
     {
-        Eigen::Vector3d coord = node->mPosition;
+        Eigen::Vector3d coord = node->position;
         pt.x = coord(0);
         pt.y = coord(1);
         pt.z = coord(2);
@@ -138,8 +138,8 @@ void GlobalPlanningNode::visualizePath(const std::vector<putn::Node::Ptr>& solut
         std::vector<Eigen::Quaterniond> orientations;
         for (const auto& node : solution)
         {
-            pts.push_back(node->mPosition);
-            pts_tra.push_back(node->mPlane->mTraversability);
+            pts.push_back(node->position);
+            pts_tra.push_back(node->plane->traversability);
         }
 
         geometry_msgs::msg::Point pt;
@@ -155,8 +155,8 @@ void GlobalPlanningNode::visualizePath(const std::vector<putn::Node::Ptr>& solut
 
         for (size_t i = 0; i < solution.size() - 1; i++)
         {
-            Eigen::Vector3d q = solution[i + 1]->mPosition - solution[i]->mPosition;
-            Eigen::Vector3d e_z = solution[i]->mPlane->normal_vector;
+            Eigen::Vector3d q = solution[i + 1]->position - solution[i]->position;
+            Eigen::Vector3d e_z = solution[i]->plane->normal_vector;
 
             Eigen::Vector3d e_x = q - (q.dot(e_z)) * q;
             e_x.normalize();
@@ -220,23 +220,23 @@ void GlobalPlanningNode::visualizeTree(const std::vector<putn::Node::Ptr>& tree)
     geometry_msgs::msg::Point parent_pt;
     for (const auto& node : tree)
     {
-        pt.x = node->mPosition(0);
-        pt.y = node->mPosition(1);
-        pt.z = node->mPosition(2);
+        pt.x = node->position(0);
+        pt.y = node->position(1);
+        pt.z = node->position(2);
         // std_msgs::msg::ColorRGBA color;
-        // color.r=color.g=node->mPlane->traversability;
+        // color.r=color.g=node->plane->traversability;
         // color.b=0;
         // color.a=1;
 
         // Points.colors.push_back(color);
         Points.points.push_back(pt);
 
-        if (node->mParent != NULL)   // skip the root node
+        if (node->parent != NULL)   // skip the root node
         {
             Line.points.push_back(pt);
-            parent_pt.x = node->mParent->mPosition(0);
-            parent_pt.y = node->mParent->mPosition(1);
-            parent_pt.z = node->mParent->mPosition(2);
+            parent_pt.x = node->parent->position(0);
+            parent_pt.y = node->parent->position(1);
+            parent_pt.z = node->parent->position(2);
             Line.points.push_back(parent_pt);
         }
     }

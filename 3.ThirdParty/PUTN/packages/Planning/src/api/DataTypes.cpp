@@ -1,17 +1,17 @@
-#include "api/putnDataType.h"
+#include "api/DataTypes.h"
 
 namespace putn
 {
 Node::Node(const Node& node)
 {
-    mChildren = node.mChildren;
-    mParent = node.mParent;
-    mPosition = node.mPosition;
-    mCost = node.mCost;
+    children = node.children;
+    parent = node.parent;
+    position = node.position;
+    cost = node.cost;
 
-    mPlane = std::make_shared<Plane>();
+    plane = std::make_shared<Plane>();
 
-    if (node.mPlane != nullptr) *mPlane = *node.mPlane;
+    if (node.plane != nullptr) *plane = *node.plane;
 }
 
 Plane::Plane(const Eigen::Vector3d& p_surface, std::shared_ptr<World> world, double radius, const FitPlaneArg& arg)
@@ -109,33 +109,26 @@ Plane::Plane(const Eigen::Vector3d& p_surface, std::shared_ptr<World> world, dou
     }
 
     /* The traversability is linear combination of the three indicators. */
-    mTraversability = arg.w_total * (arg.w_flatness * flatness + arg.w_slope * slope + arg.w_sparsity * sparsity);
-    mTraversability = (1 < mTraversability) ? 1 : mTraversability;
+    traversability = arg.w_total * (arg.w_flatness * flatness + arg.w_slope * slope + arg.w_sparsity * sparsity);
+    traversability = (1 < traversability) ? 1 : traversability;
 }
-
-// World::World(float resolution) : mResolution(resolution)
-// {
-//     mLowerBound = gINF * Eigen::Vector3d::Ones();
-//     mUpperBound = -gINF * Eigen::Vector3d::Ones();
-//     mIdxCount = Eigen::Vector3i::Zero();
-// }
 
 void World::clearMap()
 {
-    if (mExistMap)
+    if (exist_map)
     {
-        for (int i = 0; i < mIdxCount(0); i++)
+        for (int i = 0; i < index_count(0); i++)
         {
-            for (int j = 0; j < mIdxCount(1); j++)
+            for (int j = 0; j < index_count(1); j++)
             {
-                delete[] mGridMap[i][j];
-                mGridMap[i][j] = nullptr;
+                delete[] grid_map[i][j];
+                grid_map[i][j] = nullptr;
             }
-            delete[] mGridMap[i];
-            mGridMap[i] = nullptr;
+            delete[] grid_map[i];
+            grid_map[i] = nullptr;
         }
-        delete[] mGridMap;
-        mGridMap = nullptr;
+        delete[] grid_map;
+        grid_map = nullptr;
     }
 }
 
@@ -143,18 +136,18 @@ void World::initGridMap(const Eigen::Vector3d& lowerbound, const Eigen::Vector3d
 {
     mLowerBound = lowerbound;
     mUpperBound = upperbound;
-    mIdxCount = ((mUpperBound - mLowerBound) / mResolution).cast<int>() + Eigen::Vector3i::Ones();
-    mGridMap = new bool**[mIdxCount(0)];
-    for (int i = 0; i < mIdxCount(0); i++)
+    index_count = ((mUpperBound - mLowerBound) / mResolution).cast<int>() + Eigen::Vector3i::Ones();
+    grid_map = new bool**[index_count(0)];
+    for (int i = 0; i < index_count(0); i++)
     {
-        mGridMap[i] = new bool*[mIdxCount(1)];
-        for (int j = 0; j < mIdxCount(1); j++)
+        grid_map[i] = new bool*[index_count(1)];
+        for (int j = 0; j < index_count(1); j++)
         {
-            mGridMap[i][j] = new bool[mIdxCount(2)];
-            memset(mGridMap[i][j], true, mIdxCount(2) * sizeof(bool));
+            grid_map[i][j] = new bool[index_count(2)];
+            memset(grid_map[i][j], true, index_count(2) * sizeof(bool));
         }
     }
-    mExistMap = true;
+    exist_map = true;
 }
 
 void World::initGridMap(const pcl::PointCloud<pcl::PointXYZ>& cloud)
@@ -176,19 +169,19 @@ void World::initGridMap(const pcl::PointCloud<pcl::PointXYZ>& cloud)
         if (pt.z + 1.0 > mUpperBound(2)) mUpperBound(2) = pt.z + 1.0;
     }
 
-    mIdxCount = ((mUpperBound - mLowerBound) / mResolution).cast<int>() + Eigen::Vector3i::Ones();
+    index_count = ((mUpperBound - mLowerBound) / mResolution).cast<int>() + Eigen::Vector3i::Ones();
 
-    mGridMap = new bool**[mIdxCount(0)];
-    for (int i = 0; i < mIdxCount(0); i++)
+    grid_map = new bool**[index_count(0)];
+    for (int i = 0; i < index_count(0); i++)
     {
-        mGridMap[i] = new bool*[mIdxCount(1)];
-        for (int j = 0; j < mIdxCount(1); j++)
+        grid_map[i] = new bool*[index_count(1)];
+        for (int j = 0; j < index_count(1); j++)
         {
-            mGridMap[i][j] = new bool[mIdxCount(2)];
-            std::memset(mGridMap[i][j], true, mIdxCount(2) * sizeof(bool));
+            grid_map[i][j] = new bool[index_count(2)];
+            std::memset(grid_map[i][j], true, index_count(2) * sizeof(bool));
         }
     }
-    mExistMap = true;
+    exist_map = true;
 }
 
 bool World::collisionFree(const Node::ConstPtr& node_start, const Node::ConstPtr& node_end)
@@ -196,16 +189,16 @@ bool World::collisionFree(const Node::ConstPtr& node_start, const Node::ConstPtr
     Eigen::Vector3d e_z, e_y, e_x;
     Eigen::Matrix3d rotation_matrix;
 
-    Eigen::Vector3d diff_pos = node_end->mPosition - node_start->mPosition;
-    Eigen::Vector3d diff_norm_vector = node_end->mPlane->normal_vector - node_start->mPlane->normal_vector;
+    Eigen::Vector3d diff_pos = node_end->position - node_start->position;
+    Eigen::Vector3d diff_norm_vector = node_end->plane->normal_vector - node_start->plane->normal_vector;
 
     size_t step = 20;
     bool is_free = true;
 
     for (size_t i = 0; i <= step; i++)
     {
-        Eigen::Vector3d check_center = node_start->mPosition + diff_pos * i / (double)step;
-        e_z = node_start->mPlane->normal_vector + diff_norm_vector * i / (double)step;
+        Eigen::Vector3d check_center = node_start->position + diff_pos * i / (double)step;
+        e_z = node_start->plane->normal_vector + diff_norm_vector * i / (double)step;
         e_z.normalize();
 
         e_x = diff_pos - (diff_pos.dot(e_z)) * diff_pos;
@@ -228,24 +221,6 @@ bool World::collisionFree(const Node::ConstPtr& node_start, const Node::ConstPtr
     return is_free;
 }
 
-// void World::setObstacle(const Eigen::Vector3d& point)
-// {
-//     Eigen::Vector3i idx = coord2index(point);
-//     mGridMap[idx(0)][idx(1)][idx(2)] = false;
-// }
-
-// bool World::isFree(const Eigen::Vector3d& point)
-// {
-//     Eigen::Vector3i idx = coord2index(point);
-//     bool is_free = isInsideBorder(idx) && mGridMap[idx(0)][idx(1)][idx(2)];
-//     return is_free;
-// }
-
-// Eigen::Vector3d World::coordRounding(const Eigen::Vector3d& coord)
-// {
-//     return index2coord(coord2index(coord));
-// }
-
 bool World::project2surface(float x, float y, Eigen::Vector3d& p_surface)
 {
     bool ifsuccess = false;
@@ -264,10 +239,4 @@ bool World::project2surface(float x, float y, Eigen::Vector3d& p_surface)
     }
     return ifsuccess;
 }
-
-// bool World::isInsideBorder(const Eigen::Vector3i& index)
-// {
-//     return index(0) >= 0 && index(1) >= 0 && index(2) >= 0 && index(0) < mIdxCount(0) && index(1) < mIdxCount(1) &&
-//            index(2) < mIdxCount(2);
-// }
 }   // namespace putn

@@ -33,7 +33,7 @@ GlobalPlanningNode::GlobalPlanningNode(const std::string& name) : rclcpp::Node(n
     get_parameter("Plannig.RatioMax", fit_plane_arg.ratio_max);
     get_parameter("Plannig.ConvThre", fit_plane_arg.conv_thre);
     get_parameter("Plannig.FitPlaneRadius", fit_plane_radius);
-    get_parameter("Plannig.MaxInitTime", mMaxInitialTime);
+    get_parameter("Plannig.MaxInitTime", mMaxInitTime);
 
     mWorld = std::make_shared<putn::World>(resolution);
     mPFRRTStar = std::make_unique<putn::planner::PFRRTStar>(h_surf_car, mWorld);
@@ -58,24 +58,24 @@ GlobalPlanningNode::GlobalPlanningNode(const std::string& name) : rclcpp::Node(n
 
     /* Initiate Publisher */
     mGridMapVisualizePub =
-        create_publisher<sensor_msgs::msg::PointCloud2>("grid_map_vis", rclcpp::SensorDataQoS().reliable());
+        create_publisher<sensor_msgs::msg::PointCloud2>("grid_map_vis", rclcpp::SensorDataQoS().best_effort());
     mPathVisualizePub =
-        create_publisher<visualization_msgs::msg::Marker>("path_vis", rclcpp::SensorDataQoS().reliable());
+        create_publisher<visualization_msgs::msg::Marker>("path_vis", rclcpp::SensorDataQoS().best_effort());
     mGoalVisualizePub =
-        create_publisher<visualization_msgs::msg::Marker>("goal_vis", rclcpp::SensorDataQoS().reliable());
+        create_publisher<visualization_msgs::msg::Marker>("goal_vis", rclcpp::SensorDataQoS().best_effort());
     mPlaneVisualizePub =
-        create_publisher<sensor_msgs::msg::PointCloud2>("surf_vis", rclcpp::SensorDataQoS().reliable());
+        create_publisher<sensor_msgs::msg::PointCloud2>("surf_vis", rclcpp::SensorDataQoS().best_effort());
     mTreeVisualizePub =
-        create_publisher<visualization_msgs::msg::Marker>("tree_vis", rclcpp::SensorDataQoS().reliable());
-    mPathInterpolationVisualizePub =
-        create_publisher<std_msgs::msg::Float32MultiArray>("tree_tra", rclcpp::SensorDataQoS().reliable());
-    mTreeTraVisualizePub =
-        create_publisher<std_msgs::msg::Float32MultiArray>("global_path", rclcpp::SensorDataQoS().reliable());
+        create_publisher<visualization_msgs::msg::Marker>("tree_vis", rclcpp::SensorDataQoS().best_effort());
+        
+    mTreeTraPub = create_publisher<std_msgs::msg::Float32MultiArray>("tree_tra", rclcpp::ServicesQoS().reliable());
+    mGlobalPathPub =
+        create_publisher<std_msgs::msg::Float32MultiArray>("global_path", rclcpp::ServicesQoS().reliable());
 }
 
 void GlobalPlanningNode::waypointsCallback(const nav_msgs::msg::Path::ConstSharedPtr& wp)
 {
-    if (!mWorld->mExistMap) return;
+    if (!mWorld->exist_map) return;
     mHasGoal = true;
     target_pt =
         Eigen::Vector3d(wp->poses[0].pose.position.x, wp->poses[0].pose.position.y, wp->poses[0].pose.position.z);
@@ -104,24 +104,24 @@ void GlobalPlanningNode::pubInterpolatedPath(const std::vector<putn::Node::Ptr>&
     {
         if (i == solution.size() - 1)
         {
-            msg.data.push_back(solution[i]->mPosition(0));
-            msg.data.push_back(solution[i]->mPosition(1));
-            msg.data.push_back(solution[i]->mPosition(2));
+            msg.data.push_back(solution[i]->position(0));
+            msg.data.push_back(solution[i]->position(1));
+            msg.data.push_back(solution[i]->position(2));
         }
         else
         {
             size_t interpolation_num = static_cast<size_t>(putn::EuclideanDistance(solution[i + 1], solution[i]) / 0.1);
-            Eigen::Vector3d diff_pt = solution[i + 1]->mPosition - solution[i]->mPosition;
+            Eigen::Vector3d diff_pt = solution[i + 1]->position - solution[i]->position;
             for (size_t j = 0; j < interpolation_num; ++j)
             {
-                Eigen::Vector3d interpt = solution[i]->mPosition + diff_pt * (float)j / interpolation_num;
+                Eigen::Vector3d interpt = solution[i]->position + diff_pt * (float)j / interpolation_num;
                 msg.data.push_back(interpt(0));
                 msg.data.push_back(interpt(1));
                 msg.data.push_back(interpt(2));
             }
         }
     }
-    mPathInterpolationVisualizePub->publish(msg);
+    mGlobalPathPub->publish(msg);
 }
 
 void GlobalPlanningNode::findSolution()
@@ -146,13 +146,13 @@ void GlobalPlanningNode::findSolution()
         int max_iter = 5000;
         double max_time = 100.0;
 
-        while (solution.mType == putn::Path::Empty && max_time < mMaxInitialTime)
+        while (solution.type == putn::Path::Empty && max_time < mMaxInitTime)
         {
             solution = mPFRRTStar->planner(max_iter, max_time);
             max_time += 100.0;
         }
 
-        if (!solution.mNodes.empty())
+        if (!solution.nodes.empty())
         {
             RCLCPP_INFO(get_logger(), "Get a global path.");
         }
@@ -172,7 +172,7 @@ void GlobalPlanningNode::findSolution()
 
         solution = mPFRRTStar->planner(max_iter, max_time);
 
-        if (!solution.mNodes.empty())
+        if (!solution.nodes.empty())
         {
             RCLCPP_INFO(get_logger(), "Get a sub path!");
         }
@@ -184,13 +184,13 @@ void GlobalPlanningNode::findSolution()
     RCLCPP_INFO(get_logger(), "End calling PF-RRT*.");
     std::printf("=========================================================================\n");
 
-    pubInterpolatedPath(solution.mNodes);
-    visualizePath(solution.mNodes);
-    visualizePlane(solution.mNodes);
+    pubInterpolatedPath(solution.nodes);
+    visualizePath(solution.nodes);
+    visualizePlane(solution.nodes);
 
     /* When the PF-RRT* generates a short enough global path,
        it's considered that the robot has reached the goal region. */
-    if (solution.mType == putn::Path::Global &&
+    if (solution.type == putn::Path::Global &&
         putn::EuclideanDistance(mPFRRTStar->origin(), mPFRRTStar->target()) < mGoalThre)
     {
         mHasGoal = false;
@@ -199,7 +199,7 @@ void GlobalPlanningNode::findSolution()
         RCLCPP_INFO(get_logger(), "The robot has achieved the goal!!");
     }
 
-    if (solution.mType == putn::Path::Empty)
+    if (solution.type == putn::Path::Empty)
     {
         visualizePath({});
     }
@@ -208,7 +208,7 @@ void GlobalPlanningNode::findSolution()
 void GlobalPlanningNode::callPlanner()
 {
     static double init_time_cost = 0.0;
-    if (!mWorld->mExistMap) return;
+    if (!mWorld->exist_map) return;
 
     /* The tree will expand at a certain frequency to explore the space more fully. */
     if (!mHasGoal && init_time_cost < 1000.0)

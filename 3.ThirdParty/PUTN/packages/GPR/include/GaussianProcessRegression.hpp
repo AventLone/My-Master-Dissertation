@@ -27,7 +27,7 @@ public:
         std::cout << l << " " << f << " " << n;
     }
 
-    // add data one by one
+    /* add data one by one */
     void addTrainingData(const VectorXr& newInput, const VectorXr& newOutput);
 
     // batch add data
