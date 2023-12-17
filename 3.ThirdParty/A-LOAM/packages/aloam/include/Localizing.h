@@ -13,7 +13,7 @@
 class Localizing
 {
 public:
-    explicit Localizing();
+    explicit Localizing(const rclcpp::Node* const node);
     Localizing(const Localizing&) = delete;
     Localizing& operator=(const Localizing&) = delete;
     ~Localizing()
@@ -44,6 +44,7 @@ public:
 
 
 private:
+    const rclcpp::Node* mNode;
     int mCornerCorrespondence{0}, mPlaneCorrespondence{0};
 
     const double mScanPeriod{0.1};
@@ -80,11 +81,10 @@ private:
     std::atomic<bool> mShutDown{false};
     std::condition_variable mLocalizeCondition;
     std::thread mThread;
-    // boost::asio::thread_pool mThreadPool{3};
 
     std::shared_ptr<Mapping> mMapper{nullptr};
 
-    // transform all lidar points to the start of the next frame
+    // Transform all lidar points to the start of the next frame
     void transformToStart(PointType const* const pi, PointType* const po) const;
 
     void transformToEnd(PointType const* const pi, PointType* const po) const
@@ -104,5 +104,5 @@ private:
         po->intensity = pi->intensity;
     }
 
-    void process();
+    void run();
 };

@@ -40,5 +40,5 @@ private:
 
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr mRawCloudSub;
 
-    void cloudCallBack(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+    void LidarCallBack(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg);
 };

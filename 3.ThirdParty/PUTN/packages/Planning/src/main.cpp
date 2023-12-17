@@ -29,18 +29,18 @@ int main(int argc, char** argv)
         }
     };
 
-    std::thread my_thread(task_globalPlanning);
+    // std::thread my_thread(task_globalPlanning);
 
-    rclcpp::ExecutorOptions options;
-    rclcpp::executors::MultiThreadedExecutor executor(options, 2);   // Assign 2 threads to the thread pool.
+    // rclcpp::ExecutorOptions options;
+    // rclcpp::executors::MultiThreadedExecutor executor(options, 2);   // Assign 2 threads to the thread pool.
 
-    executor.add_node(global_planning_node);
+    // executor.add_node(global_planning_node);
 
-    executor.spin();
+    // executor.spin();
 
     rclcpp::shutdown();
 
-    my_thread.join();
+    // my_thread.join();
 
     return 0;
 }

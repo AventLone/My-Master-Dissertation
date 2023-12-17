@@ -2,9 +2,10 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 
-Localizing::Localizing()
+Localizing::Localizing(const rclcpp::Node* const node)
 {
-    mThread = std::thread(&Localizing::process, this);
+    mNode = node;
+    mThread = std::thread(&Localizing::run, this);
 }
 
 void Localizing::insertCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr& full_cloud,
@@ -19,21 +20,23 @@ void Localizing::insertCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr& full_cl
     mLessSharpCornerCloudBuffer.emplace(less_sharp_cloud);
     mFlatSurfCloudBuffer.emplace(flat_cloud);
     mLessFlatSurfCloudBuffer.emplace(less_flat_cloud);
+
     if (mFullCloudBuffer.size() > 30)
     {
+        RCLCPP_WARN(mNode->get_logger(), "Buffers are full, have to pop out.");
         mFullCloudBuffer.pop();
         mSharpCornerCloudBuffer.pop();
         mLessSharpCornerCloudBuffer.pop();
         mFlatSurfCloudBuffer.pop();
         mLessFlatSurfCloudBuffer.pop();
     }
+
     mLocalizeCondition.notify_one();
 }
 
 void Localizing::transformToStart(PointType const* const pi, PointType* const po) const
 {
-    // interpolation ratio
-    double s;
+    double s;   // interpolation ratio
     if (DISTORTION)
     {
         s = (pi->intensity - int(pi->intensity)) / mScanPeriod;
@@ -54,7 +57,7 @@ void Localizing::transformToStart(PointType const* const pi, PointType* const po
     po->intensity = pi->intensity;
 }
 
-void Localizing::process()
+void Localizing::run()
 {
     for (;;)
     {
@@ -62,7 +65,7 @@ void Localizing::process()
             less_flat_surf_cloud;
         {
             std::unique_lock<std::mutex> lock(mBufferMutex);
-            mLocalizeCondition.wait(lock, [this] { return mFullCloudBuffer.size() > 0 || mShutDown; });
+            mLocalizeCondition.wait(lock, [this]() { return mFullCloudBuffer.size() > 0 || mShutDown; });
             if (mShutDown) break;
 
             full_cloud = mFullCloudBuffer.front();

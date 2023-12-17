@@ -43,6 +43,9 @@ GlobalPlanningNode::GlobalPlanningNode(const std::string& name) : rclcpp::Node(n
     mPFRRTStar->setFitPlaneRadius(fit_plane_radius);
     mPFRRTStar->setNeighborRadius(neighbor_radius);
 
+    mTfBuffer = std::make_unique<tf2_ros::Buffer>(get_clock());
+    mTfListener = std::make_shared<tf2_ros::TransformListener>(*mTfBuffer);
+
     /* Initiate Subscription */
     mMapSub = create_subscription<sensor_msgs::msg::PointCloud2>(
         "cloud_map",
@@ -68,7 +71,6 @@ GlobalPlanningNode::GlobalPlanningNode(const std::string& name) : rclcpp::Node(n
         create_publisher<std_msgs::msg::Float32MultiArray>("tree_tra", rclcpp::SensorDataQoS().reliable());
     mTreeTraVisualizePub =
         create_publisher<std_msgs::msg::Float32MultiArray>("global_path", rclcpp::SensorDataQoS().reliable());
-
 }
 
 void GlobalPlanningNode::waypointsCallback(const nav_msgs::msg::Path::ConstSharedPtr& wp)

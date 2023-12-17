@@ -14,7 +14,7 @@ Node::Node(const Node& node)
     if (node.mPlane != nullptr) *mPlane = *node.mPlane;
 }
 
-Plane::Plane(const Eigen::Vector3d& p_surface, World::Ptr world, double radius, const FitPlaneArg& arg)
+Plane::Plane(const Eigen::Vector3d& p_surface, std::shared_ptr<World> world, double radius, const FitPlaneArg& arg)
 {
     init_coord = project2plane(p_surface);
     Eigen::Vector3d ball_center = world->coordRounding(p_surface);

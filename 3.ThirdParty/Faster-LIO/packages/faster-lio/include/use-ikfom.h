@@ -1,12 +1,8 @@
 #pragma once
-// #ifndef USE_IKFOM_HPP
-// #define USE_IKFOM_HPP
-
 #include "IKFoM_toolkit/esekfom/esekfom.hpp"
 
 namespace faster_lio
 {
-
 typedef MTK::vect<3, double> vect3;
 typedef MTK::SO3<double> SO3;
 typedef MTK::S2<double, 98090, 10000, 1> S2;

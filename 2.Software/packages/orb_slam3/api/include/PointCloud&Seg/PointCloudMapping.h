@@ -1,4 +1,6 @@
 #pragma once
+#include "KeyFrame.h"
+#include "SemanticSegmenting.h"
 #include <atomic>
 #include <condition_variable>
 #include <thread>
@@ -6,9 +8,6 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/statistical_outlier_removal.h>
-
-#include "KeyFrame.h"
-#include "SemanticSegmenting.h"
 
 namespace ORB_SLAM3
 {
@@ -25,32 +24,37 @@ public:
     ~PointCloudMapping() = default;
 
     void insertKeyFrame(KeyFrame* kf);
+
     void updatePointCloud(Map& cur_map);
-    void shutdown();
 
-public:
-    // 关于更新时的变量
-    std::atomic<bool> mIsUpdating{false};
+    void shutdown()
+    {
+        mShutdown = true;
+        mKeyFrameUpdate.notify_all();
+        mMyThread.join();
+    }
 
-    PointCloud mGlobalMap;
+    std::atomic<bool> mIsUpdating{false};   // 关于更新时的变量
+
+    PointCloud::Ptr mGlobalMap{new PointCloud};
 
     std::vector<KeyFrame*> mCurrentKFs;
 
 private:
+    /* Buffers */
+    std::queue<KeyFrame*> mKeyFrameBuffer;
+
     /*** Multi-Threaded ***/
-    std::list<KeyFrame*> mKeyframeList;
     std::thread mMyThread;
-    // bool shutDownFlag = false;
-    // std::mutex shutDownMutex;
-    std::atomic<bool> mShutdownFlag{false};
-    // std::condition_variable mKeyFrameUpdated;
+    std::atomic<bool> mShutdown{false};
+    std::condition_variable mKeyFrameUpdate;
     std::mutex mKeyframeMutex, mUpdateMutex, mGlobalMapMutex;
 
     // double resolution{0.05};
     // double meank{50};
     // double thresh{1};
 
-    /*****/
+    /* Point cloud filter */
     pcl::VoxelGrid<PointT> mVoxelFilter;
     pcl::StatisticalOutlierRemoval<PointT> mStatisticalFilter;
 

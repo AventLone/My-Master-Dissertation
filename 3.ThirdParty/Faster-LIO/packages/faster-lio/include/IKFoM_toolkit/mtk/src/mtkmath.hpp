@@ -154,7 +154,7 @@ inline scalar normalize(scalar x, scalar bound)
 }
 
 /**
- * Calculate cosine and sinc of sqrt(x2).
+ * @brief Calculate cosine and sinc of sqrt(x2).
  * @param x2 the squared angle must be non-negative
  * @return a pair containing cos and sinc of sqrt(x2)
  */
@@ -168,7 +168,8 @@ std::pair<scalar, scalar> cos_sinc_sqrt(const scalar& x2)
     static scalar const taylor_2_bound = sqrt(taylor_0_bound);
     static scalar const taylor_n_bound = sqrt(taylor_2_bound);
 
-    assert(x2 >= 0 && "argument must be non-negative");
+    // assert(x2 >= 0 && "argument must be non-negative");
+    assert(x2 >= 0);   // "argument must be non-negative"
 
     // FIXME check if bigger bounds are possible
     if (x2 >= taylor_n_bound)

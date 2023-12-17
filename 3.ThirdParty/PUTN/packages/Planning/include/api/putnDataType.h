@@ -15,9 +15,9 @@ namespace putn
 {
 const float gINF = std::numeric_limits<float>::max();
 
-class Node;
-class Plane;
-class World;
+struct Node;
+struct Plane;
+struct World;
 
 /**
  * @brief Struct for setting parameters when fitting local plane
@@ -38,12 +38,12 @@ struct FitPlaneArg
  * position of the robot when moving on this plane,and the mTraversability can evaluate whether the
  * the robot is safe when moving on this plane.
  */
-class Plane
+struct Plane
 {
-public:
     using Ptr = std::shared_ptr<Plane>;
     explicit Plane() = default;
-    explicit Plane(const Eigen::Vector3d& p_surface, World::Ptr world, double radius, const FitPlaneArg& arg);
+    explicit Plane(const Eigen::Vector3d& p_surface, std::shared_ptr<World> world, double radius,
+                   const FitPlaneArg& arg);
     ~Plane() = default;
 
     Eigen::Vector2d init_coord;
@@ -56,9 +56,8 @@ public:
  * @brief Class for storing the info of vertex.The recorded information of parent and child nodes will be used to bulid
  * the tree.The cost value represents the sum of the cost values required to arrive from the root node of the tree.
  */
-class Node
+struct Node
 {
-public:
     using Ptr = std::shared_ptr<Node>;
     using ConstPtr = std::shared_ptr<const Node>;
     explicit Node() = default;
@@ -106,9 +105,8 @@ struct Path
  * @brief Class for storing obstacles and world dimension.The information of obstacle is stored in a three-dimensional
  * bool array. Before using the PF-RRT* algorithm,a suitable grid map must be built
  */
-class World
+struct World
 {
-public:
     using Ptr = std::shared_ptr<World>;
     using ConstPtr = std::shared_ptr<const World>;
 
@@ -175,9 +173,9 @@ public:
      * @brief Given a 2D coord, start from the lowerbound of the height of the grid map,search upward,
      *        and determine the boundary between the occupied area and the non occupied area as the
      *        surface point.
-     * @param float x(the first dimension)
-     * @param float y(the second dimension)
-     * @param Eigen::Vector3d* p_surface(store the result of the projecting)
+     * @param x the first dimension
+     * @param y the second dimension
+     * @param p_surface store the result of the projecting
      * @return bool true(no obstacle exists),false(exist obstacle)
      */
     bool project2surface(float x, float y, Eigen::Vector3d& p_surface);
@@ -254,8 +252,8 @@ public:
 
 /**
  * @brief Given a 3D point,extract its x and y coordinates and return a 2D point
- * @param Vector3d
- * @return Vector2d
+ * @param p the 3D point
+ * @return the 2D coordinate containing only x, y of p
  */
 inline Eigen::Vector2d project2plane(const Eigen::Vector3d& p)
 {

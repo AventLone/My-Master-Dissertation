@@ -238,10 +238,8 @@ protected:
     // Fix scale in the stereo/RGB-D case
     bool mbFixScale;
 
-
     // bool mnFullBAIdx;
     int mnFullBAIdx;
-
 
     std::vector<double> vdPR_CurrentTime;
     std::vector<double> vdPR_MatchedTime;
@@ -251,7 +249,6 @@ protected:
     std::string mstrFolderSubTraj;
     int mnNumCorrection;
     int mnCorrectionGBA;
-
 
     // To (de)activate LC
     bool mbActiveLC = true;

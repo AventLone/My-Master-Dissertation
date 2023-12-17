@@ -3,11 +3,12 @@
 #include "api/GlobalPlanner.h"
 #include "api/putnDataType.h"
 #include <Eigen/Dense>
-#include <tf2_ros/transform_listener.h>
 #include <visualization_msgs/msg/marker.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <std_msgs/msg/float32_multi_array.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 
 class GlobalPlanningNode : public rclcpp::Node
 {
@@ -16,7 +17,7 @@ public:
     void callPlanner();
 
 private:
-    bool mHasGoal{false};   // indicate whether the robot has a moving goal
+    bool mHasGoal{false};   // Indicate whether the robot has a moving goal
 
     double mMaxInitialTime;
     double mGoalThre;
@@ -40,12 +41,14 @@ private:
 
     // tf2_ros::TransformListener mTfListener;
     // std::unique_ptr<tf2_ros::TransformListener> mTfListener;
-    tf2::BufferCore mTfBuffer;
-    tf2_ros::TransformListener mTfListener{mTfBuffer};
+    // tf2::BufferCore mTfBuffer;
+    // tf2_ros::TransformListener mTfListener{mTfBuffer};
+
+    std::unique_ptr<tf2_ros::Buffer> mTfBuffer{nullptr};
+    std::shared_ptr<tf2_ros::TransformListener> mTfListener{nullptr};
 
     void pubInterpolatedPath(const std::vector<putn::Node::Ptr>& solution);
     void findSolution();
-
 
     void visualizeWorld();   // Visualize the grid map.
 

@@ -1,52 +1,55 @@
-Common:
-  DataSet: "nclt"
-  LidarTopic: "points_raw"
-  ImuTopic: "imu_raw"
-  TimeSync: false         # ONLY turn on when external time synchronization is really not possible
+faster_lio:
+    ros__parameters:
+        use_sim_time: true
+        Common:
+            DataSet: "nclt"
+            LidarTopic: "BD_Roamer/Lidar/point_cloud"
+            ImuTopic: "BD_Roamer/imu"
+            TimeSync: false     # ONLY turn on when external time synchronization is really not possible
 
-Preprocess:
-  LidarType: 2                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR,
-  ScanLine: 16
-  Blind: 4
-  TimeScale: 1e-3             # 兼容不同数据集的时间单位，仅对Velodyne LiDAR(lidar_type=2)生效
+        Preprocess:
+            LidarType: 2        # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR,
+            ScanLine: 16
+            Blind: 4.0
+            TimeScale: 0.001     # 兼容不同数据集的时间单位，仅对Velodyne LiDAR(lidar_type=2)生效
 
-Mapping:
-  AccCov: 0.1
-  GyrCov: 0.1
-  AccCovB: 0.0001
-  GyrCovB: 0.0001
-  FovDegree: 180
-  DetRange: 100.0
-  ExtrinsicEstimation: true      # true: enable the online estimation of IMU-LiDAR extrinsic
-  ExtrinsicT: [ 0, 0, 0.28 ]
-  ExtrinsicR: [ 1, 0, 0,
-                 0, 1, 0,
-                 0, 0, 1 ]
+        Mapping:
+            AccCov: 0.1
+            GyrCov: 0.1
+            AccCovB: 0.0001
+            GyrCovB: 0.0001
+            FovDegree: 180
+            DetRange: 100.0
+            ExtrinsicEstimation: true   # true: enable the online estimation of IMU-LiDAR extrinsic
+            ExtrinsicT: [0.0, 0.0, 0.28]
+            ExtrinsicR: [1.0, 0.0, 0.0,
+                         0.0, 1.0, 0.0, 
+                         0.0, 0.0, 1.0]
 
-Publish:
-  Path: false
-  Scan: true           # false: close all the point cloud output
-  EffectScan: true     # true: publish the pointscloud of effect point
-  Dense: false         # false: low down the points number in a global-frame point clouds scan.
-  BodyFrameScan: true  # true: output the point cloud scans in IMU-body-frame
-  TfImuFrame: "body"
-  TfWorldFram: "camera_init"
+        Publish:
+            Path: false
+            Scan: true          # false: close all the point cloud output
+            EffectScan: true    # true: publish the pointscloud of effect point
+            Dense: false        # false: low down the points number in a global-frame point clouds scan.
+            BodyFrameScan: true # true: output the point cloud scans in IMU-body-frame
+            TfImuFrame: "body"
+            TfWorldFram: "camera_init"
 
-SavePcd:
-  Enable: true
-  Interval: -1                 # how many LiDAR frames saved in each pcd file;
-  # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.
+        SavePcd:
+            Enable: true
+            Interval: -1    # how many LiDAR frames saved in each pcd file;
+            # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.
 
-FilterSize:
-  Surf: 0.5
-  Map: 0.5
+        FilterSize:
+            Surf: 0.5
+            Map: 0.5
 
-PointFilterNum: 6
-MaxIteration: 3
-CubeSideLength: 1000
-SavePath: false            # 保存轨迹，用于精度计算和比较
-EnableExtractFeature: false
+        PointFilterNum: 6
+        MaxIteration: 3
+        CubeSideLength: 1000.0
+        SavePath: false             # 保存轨迹，用于精度计算和比较
+        EnableExtractFeature: false
 
-IvoxGridResolution: 0.5         # default = 0.2
-IvoxNearbyType: 18              # 6, 18, 26
-EstiPlaneThreashold: 0.1        # default = 0.1
+        IvoxGridResolution: 0.5     # default = 0.2
+        IvoxNearbyType: 18          # 6, 18, 26
+        EstiPlaneThreashold: 0.1    # default = 0.1

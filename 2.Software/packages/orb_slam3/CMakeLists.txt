@@ -1,14 +1,18 @@
 cmake_minimum_required(VERSION 3.8)
-project(orb_slam3)
+project(orb_slam3 LANGUAGES CXX)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 # --------------------------------------------------------------------------------
 # Find ROS2 dependencies
 # --------------------------------------------------------------------------------
-set(DEPENDED_PACKAGES
+set(DEPENDENT_PACKAGIES
     rclcpp
     sensor_msgs
     cv_bridge
@@ -25,14 +29,14 @@ set(DEPENDED_PACKAGES
 
 find_package(ament_cmake REQUIRED)
 
-foreach(Dependency IN ITEMS ${DEPENDED_PACKAGES})
-    find_package(${Dependency} REQUIRED)
+foreach(PACKAGE IN ITEMS ${DEPENDENT_PACKAGIES})
+    find_package(${PACKAGE} REQUIRED)
 endforeach()
 
 # --------------------------------------------------------------------------------
 # Find dependencies
 # --------------------------------------------------------------------------------
-find_package(PCL 1.12 REQUIRED)
+find_package(PCL REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(CUDA REQUIRED)
@@ -52,7 +56,7 @@ include_directories(
     /home/avent/.CppLib/TensorRT-8.5.3.1/include
 )
 
-set(DEPEND_LIBS
+set(DEPENDENT_LIBS
     ${Pangolin_LIBRARIES}
     ${PCL_LIBRARIES}
     ${CMAKE_CURRENT_SOURCE_DIR}/api/lib/libDBoW2.so
@@ -67,17 +71,12 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
 # Specify a name of the node(executable)
-set(NODE_NAME rgbd)
+set(NODE_NAME orb_slam3)
 add_executable(${NODE_NAME} ${SOURCE_FILES})
 
-# Specify a C++ standard
-target_compile_features(${NODE_NAME} PUBLIC c_std_99 cxx_std_17) # Require C99 and C++17
-
-# Specify the ROS2 package dependencies
-ament_target_dependencies(${NODE_NAME} ${DEPENDED_PACKAGES})
-
-# Link libraries
-target_link_libraries(${NODE_NAME} ${DEPEND_LIBS})
+target_compile_features(${NODE_NAME} PUBLIC c_std_99 cxx_std_17) # Specify a C++ standard: Require C99 and C++17
+target_link_libraries(${NODE_NAME} ${DEPENDENT_LIBS})
+ament_target_dependencies(${NODE_NAME} ${DEPENDENT_PACKAGIES})
 
 # Install the executable and directories in specified folders
 install(TARGETS ${NODE_NAME}

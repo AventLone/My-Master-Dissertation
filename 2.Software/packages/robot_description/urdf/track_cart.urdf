@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot name="track_cart">
+  <link name="base_link">
+    <inertial>
+      <origin xyz="-0.0094017 8.0353E-09 0.01613" rpy="0 0 0" />
+      <mass value="10.442" />
+      <inertia ixx="0.048567" ixy="-3.7869E-08" ixz="0.0021766" iyy="0.17194" iyz="8.5932E-10" izz="0.21447" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="1 1 1 1" />
+        <texture filename="package://robot_description/textures/Plastic011_1K_Color.jpg" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="left_wheel_link">
+    <inertial>
+      <origin xyz="1.7347E-18 0.021 0" rpy="0 0 0" />
+      <mass value="0.14088" />
+      <inertia ixx="3.459E-05" ixy="1.356E-22" ixz="-3.6375E-37" iyy="2.8073E-05" iyz="-1.1977E-21" izz="3.459E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/left_wheel_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.89412 0.91373 0.92941 1" />
+        <texture filename="package://robot_description/textures/Metal011_1K_Color.jpg" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/left_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_wheel_joint" type="fixed">
+    <origin xyz="-0.203430162144383 0.0999999999999995 0.0188560646381767" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="left_wheel_link" />
+    <axis xyz="0 -1 0" />
+  </joint>
+  <link name="right_wheel_link">
+    <inertial>
+      <origin xyz="5.2042E-18 0.021 0" rpy="0 0 0" />
+      <mass value="0.14088" />
+      <inertia ixx="3.459E-05" ixy="-1.761E-22" ixz="-4.6703E-37" iyy="2.8073E-05" iyz="1.1977E-21" izz="3.459E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/right_wheel_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.89412 0.91373 0.92941 1" />
+        <texture filename="package://robot_description/textures/Metal011_1K_Color.jpg" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/right_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_wheel_joint" type="fixed">
+    <origin xyz="-0.203430162144383 -0.142000000000001 0.0188560646381767" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="right_wheel_link" />
+    <axis xyz="0 1 0" />
+  </joint>
+  <link name="camera_link">
+    <inertial>
+      <origin xyz="-0.012036 0.001259 -0.023045" rpy="0 0 0" />
+      <mass value="0.022518" />
+      <inertia ixx="1.0002E-05" ixy="1.8784E-07" ixz="-2.7793E-08" iyy="2.5528E-06" iyz="-7.338E-09" izz="8.95E-06" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/camera_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.79216 0.81961 0.93333 1" />
+        <texture filename="package://robot_description/textures/Metal009_1K_Color.jpg" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/camera_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="camera_joint" type="fixed">
+    <origin xyz="0.187658698280417 -0.0010000000000005 0.0983819003855137" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="camera_link" />
+    <axis xyz="0 0 0" />
+  </joint>
+  <link name="support_wheel_link">
+    <inertial>
+      <origin xyz="0.0068516 -5.5511E-16 -0.054115" rpy="0 0 0" />
+      <mass value="0.24393" />
+      <inertia ixx="4.9711E-05" ixy="-9.8842E-22" ixz="1.019E-05" iyy="3.5616E-05" iyz="-7.4531E-21" izz="2.995E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/support_wheel_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.85098 0.85098 0.85098 1" />
+        <texture filename="package://robot_description/textures/Metal032_1K_Color.jpg" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/support_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="support_wheel_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="support_wheel_link" />
+    <axis xyz="0 0 0" />
+  </joint>
+  <link name="big_support_wheel_link">
+    <inertial>
+      <origin xyz="0.20115 -5.5511E-16 0.012939" rpy="0 0 0" />
+      <mass value="0.28176" />
+      <inertia ixx="6.9181E-05" ixy="-7.9452E-22" ixz="1.7078E-53" iyy="5.6146E-05" iyz="1.044E-52" izz="6.9181E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/big_support_wheel_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.89412 0.91373 0.92941 1" />
+        <texture filename="package://robot_description/textures/Metal011_1K_Color.jpg" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/big_support_wheel_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="big_support_wheel_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="big_support_wheel_link" />
+    <axis xyz="0 0 0" />
+  </joint>
+  <link name="track_link">
+    <inertial>
+      <origin xyz="0.0001348 -1.1102E-15 -0.011854" rpy="0 0 0" />
+      <mass value="0.09681" />
+      <inertia ixx="0.00024241" ixy="-6.3704E-20" ixz="3.5167E-05" iyy="0.0021604" iyz="1.7284E-19" izz="0.0019389" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/track_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.29804 0.29804 0.29804 1" />
+        <texture filename="package://robot_description/textures/Plastic012A_1K_Color.jpg" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://robot_description/meshes/track_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="track_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="track_link" />
+    <axis xyz="0 0 0" />
+  </joint>
+</robot>

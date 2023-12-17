@@ -1,6 +1,7 @@
 import os
 import launch
 from launch import LaunchDescription
+from launch.actions import TimerAction
 from launch.event_handlers import OnProcessExit
 from launch_ros.substitutions import FindPackageShare
 from webots_ros2_driver.webots_launcher import WebotsLauncher
@@ -14,7 +15,7 @@ def generate_launch_description():
     webots = WebotsLauncher(world=os.path.join(this_pkg, 'worlds', 'wild_environment.wbt'))
 
     my_robot_driver = WebotsController(
-        robot_name='track cart',
+        robot_name='BD_Roamer',
         parameters=[{'robot_description': robot_description_path}]
     )
 
@@ -26,8 +27,8 @@ def generate_launch_description():
     )
 
     ld = LaunchDescription()
-    ld.add_action(my_robot_driver)
     ld.add_action(webots)
+    ld.add_action(TimerAction(period=1.0, actions=[my_robot_driver]))
     ld.add_action(event_)
 
     return ld

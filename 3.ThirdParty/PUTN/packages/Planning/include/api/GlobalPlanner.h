@@ -2,6 +2,7 @@
 #define PUTN_PLANNER_H
 
 #include <utility>
+#include "putnDataType.h"
 // #include "Visualization.h"
 
 namespace putn

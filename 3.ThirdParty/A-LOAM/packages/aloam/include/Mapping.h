@@ -65,10 +65,10 @@ private:
     // pcl::PointCloud<PointType>::Ptr corner_cloud{new pcl::PointCloud<PointType>()};
     // pcl::PointCloud<PointType>::Ptr surf_cloud{new pcl::PointCloud<PointType>()};
 
-    // ouput: all visualble cube points
+    /* Ouput: all visualble cube points */
     pcl::PointCloud<PointType>::Ptr mSurroundCloud{new pcl::PointCloud<PointType>()};
 
-    // surround points in map to build tree
+    /* Surround points in map to build tree. */
     pcl::PointCloud<PointType>::Ptr mCornerFromMapCloud{new pcl::PointCloud<PointType>()};
     pcl::PointCloud<PointType>::Ptr mSurfFromMapCloud{new pcl::PointCloud<PointType>()};
 
@@ -154,5 +154,5 @@ private:
     void publishMsgs(Eigen::Quaterniond orientation, Eigen::Vector3d position,
                      pcl::PointCloud<PointType>::Ptr surround_cloud, pcl::PointCloud<PointType>::Ptr cloud_map);
 
-    void process();
+    void run();
 };

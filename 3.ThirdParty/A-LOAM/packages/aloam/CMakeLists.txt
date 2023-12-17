@@ -10,7 +10,7 @@ endif()
 # --------------------------------------------------------------------------------
 find_package(ament_cmake REQUIRED)
 
-set(DEPENDED_PACKAGES
+set(DEPENDENT_PACKAGIES
     rclcpp
     std_msgs
     sensor_msgs
@@ -22,8 +22,8 @@ set(DEPENDED_PACKAGES
     pcl_conversions
 )
 
-foreach(Dependency IN ITEMS ${DEPENDED_PACKAGES})
-    find_package(${Dependency} REQUIRED)
+foreach(PACKAGE IN ITEMS ${DEPENDENT_PACKAGIES})
+    find_package(${PACKAGE} REQUIRED)
 endforeach()
 
 # --------------------------------------------------------------------------------
@@ -54,7 +54,7 @@ add_executable(${NODE_NAME}
 target_compile_features(${NODE_NAME} PUBLIC c_std_99 cxx_std_17)
 
 # Specify the ROS2 package dependencies, and link libraries
-ament_target_dependencies(${NODE_NAME} ${DEPENDED_PACKAGES})
+ament_target_dependencies(${NODE_NAME} ${DEPENDENT_PACKAGIES})
 target_link_libraries(${NODE_NAME}
     ${PCL_LIBRARIES}
     ${CERES_LIBRARIES}

@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="track cart">
+<robot name="BD_Roamer">
     <webots>
         <device reference="left track position sensor" type="DistanceSensor">
             <ros>

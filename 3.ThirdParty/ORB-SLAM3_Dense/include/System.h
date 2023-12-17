@@ -175,9 +175,13 @@ public:
     float GetImageScale();
 
     /*** Get Dense Map ***/
-    void getPointCloudMap(pcl::PointCloud<pcl::PointXYZRGB>& cloud)
+    // void getPointCloudMap(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud)
+    // {
+    //     cloud = mPointCloudMapper->mGlobalMap;
+    // }
+    const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& getPointCloudMap()
     {
-        cloud = mPointCloudMapper->mGlobalMap;
+        return mPointCloudMapper->mGlobalMap;
     }
 
 #ifdef REGISTER_TIMES

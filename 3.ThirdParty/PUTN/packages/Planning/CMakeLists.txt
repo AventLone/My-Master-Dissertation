@@ -5,6 +5,10 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 # --------------------------------------------------------------------------------
 # Find dependent ROS2 packages
 # --------------------------------------------------------------------------------
@@ -13,8 +17,9 @@ set(DEPENDENT_PACKAGIES
     std_msgs
     geometry_msgs
     nav_msgs
-    rviz_visual_tools
     visualization_msgs
+    tf2_ros
+    pcl_conversions
 )
 
 find_package(ament_cmake REQUIRED)
@@ -26,13 +31,7 @@ endforeach()
 # --------------------------------------------------------------------------------
 # Find dependencies
 # --------------------------------------------------------------------------------
-find_package(PCL 1.12 REQUIRED)
-
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${PCL_INCLUDE_DIRS}
-)
-
+find_package(PCL REQUIRED)
 set(DEPENDENT_LIBS
     ${PCL_LIBRARIES}
 )
@@ -41,13 +40,19 @@ set(DEPENDENT_LIBS
 file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
 # Specify a name of the node(executable)
-set(NODE_NAME local_obs_node)
+set(NODE_NAME global_planner)
 add_executable(${NODE_NAME} ${SOURCE_FILES})
+target_include_directories(${NODE_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    ${PCL_INCLUDE_DIRS}
+    ${EIGEN_INCLUDE_DIRS}
+)
 
 # Specify a C++ standard
 target_compile_features(${NODE_NAME} PUBLIC c_std_99 cxx_std_17) # Require C99 and C++17
-ament_target_dependencies(${NODE_NAME} ${DEPENDENT_PACKAGIES})
 target_link_libraries(${NODE_NAME} ${DEPENDENT_LIBS})
+ament_target_dependencies(${NODE_NAME} ${DEPENDENT_PACKAGIES})
 
 # Install the executable and directories in specified folders
 install(TARGETS ${NODE_NAME}

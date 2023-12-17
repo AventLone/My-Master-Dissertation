@@ -45,16 +45,16 @@ SystemNode::SystemNode(const std::string& name) : rclcpp::Node(name)
     get_parameter("PlaneResolution", plane_resolution);
 
     mRawCloudSub = create_subscription<sensor_msgs::msg::PointCloud2>(
-        "track_cart/Lidar/point_cloud",
-        rclcpp::SensorDataQoS().reliable(),
-        std::bind(&SystemNode::cloudCallBack, this, std::placeholders::_1));
+        "BD_Roamer/Lidar/point_cloud",
+        rclcpp::SensorDataQoS().best_effort(),
+        std::bind(&SystemNode::LidarCallBack, this, std::placeholders::_1));
 
-    mLocalizer = std::make_shared<Localizing>();
+    mLocalizer = std::make_shared<Localizing>(this);
     mMapper = std::make_shared<Mapping>(line_resolution, plane_resolution);
     mLocalizer->setMapper(mMapper);
 }
 
-void SystemNode::cloudCallBack(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
+void SystemNode::LidarCallBack(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg)
 {
     std::vector<int> scan_start_index(mScanLines, 0);
     std::vector<int> scan_end_index(mScanLines, 0);
@@ -93,42 +93,44 @@ void SystemNode::cloudCallBack(const sensor_msgs::msg::PointCloud2::SharedPtr ms
         float angle = std::atan(point.z / std::sqrt(point.x * point.x + point.y * point.y)) * 180 / M_PI;
         int scanID = 0;
 
-        if (mScanLines == 16)
+        switch (mScanLines)
         {
-            scanID = static_cast<int>((angle + 15) / 2 + 0.5);
-            if (scanID > (mScanLines - 1) || scanID < 0)
-            {
-                count--;
-                continue;
-            }
-        }
-        else if (mScanLines == 32)
-        {
-            scanID = static_cast<int>((angle + 92.0 / 3.0) * 3.0 / 4.0);
-            if (scanID > (mScanLines - 1) || scanID < 0)
-            {
-                count--;
-                continue;
-            }
-        }
-        else if (mScanLines == 64)
-        {
-            if (angle >= -8.83)
-                scanID = static_cast<int>((2 - angle) * 3.0 + 0.5);
-            else
-                scanID = mScanLines / 2 + static_cast<int>((-8.83 - angle) * 2.0 + 0.5);
-
-            // use [0 50]  > 50 remove outlies
-            if (angle > 2 || angle < -24.33 || scanID > 50 || scanID < 0)
-            {
-                count--;
-                continue;
-            }
-        }
-        else
-        {
-            RCLCPP_ERROR(get_logger(), "Wrong scan number!");
-            std::exit(EXIT_FAILURE);
+            case 16:
+                scanID = static_cast<int>((angle + 15) / 2 + 0.5);
+                if (scanID > (mScanLines - 1) || scanID < 0)
+                {
+                    count--;
+                    continue;
+                }
+                break;
+            case 32:
+                scanID = static_cast<int>((angle + 92.0 / 3.0) * 3.0 / 4.0);
+                if (scanID > (mScanLines - 1) || scanID < 0)
+                {
+                    count--;
+                    continue;
+                }
+                break;
+            case 64:
+                if (angle >= -8.83)
+                {
+                    scanID = static_cast<int>((2 - angle) * 3.0 + 0.5);
+                }
+                else
+                {
+                    scanID = mScanLines / 2 + static_cast<int>((-8.83 - angle) * 2.0 + 0.5);
+                }
+                /* use [0 50]  > 50 remove outlies */
+                if (angle > 2 || angle < -24.33 || scanID > 50 || scanID < 0)
+                {
+                    count--;
+                    continue;
+                }
+                break;
+            default:
+                RCLCPP_FATAL(get_logger(), "Wrong scan number!");
+                std::exit(EXIT_FAILURE);
+                break;
         }
 
         float ori = -std::atan2(point.y, point.x);

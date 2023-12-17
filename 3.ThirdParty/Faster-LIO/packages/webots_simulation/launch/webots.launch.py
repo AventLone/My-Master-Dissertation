@@ -1,6 +1,7 @@
 import os
 import launch
 from launch import LaunchDescription
+from launch.actions import TimerAction
 from launch.event_handlers import OnProcessExit
 from launch_ros.substitutions import FindPackageShare
 from webots_ros2_driver.webots_launcher import WebotsLauncher
@@ -26,8 +27,8 @@ def generate_launch_description():
     )
 
     ld = LaunchDescription()
-    ld.add_action(my_robot_driver)
     ld.add_action(webots)
+    ld.add_action(TimerAction(period=1.0, actions=[my_robot_driver]))
     ld.add_action(event_)
 
     return ld

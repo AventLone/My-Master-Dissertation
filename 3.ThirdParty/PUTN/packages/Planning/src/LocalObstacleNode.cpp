@@ -3,10 +3,11 @@
 
 LocalObstacleNode::LocalObstacleNode(const std::string& name) : rclcpp::Node(name)
 {
-    // mTfListener = std::make_unique<tf2_ros::TransformListener>(this);
+    mTfBuffer = std::make_unique<tf2_ros::Buffer>(get_clock());
+    mTfListener = std::make_shared<tf2_ros::TransformListener>(*mTfBuffer);
 
     mMapSub = create_subscription<sensor_msgs::msg::PointCloud2>(
-        "map",
+        "BD_Roamer/Lidar/point_cloud",
         rclcpp::SensorDataQoS().reliable(),
         std::bind(&LocalObstacleNode::mapCallback, this, std::placeholders::_1));
 
@@ -17,7 +18,7 @@ LocalObstacleNode::LocalObstacleNode(const std::string& name) : rclcpp::Node(nam
 
 void LocalObstacleNode::mapCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg)
 {
-    RCLCPP_INFO(get_logger(), "Receive velodyne!");
+    RCLCPP_INFO(get_logger(), "Receive Velodyne Lidar scan!");
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*msg, *cloud);
@@ -61,16 +62,19 @@ void LocalObstacleNode::mapCallback(const sensor_msgs::msg::PointCloud2::ConstSh
     }
 
     // mTfListener->waitForTransform("/world", "/aft_mapped", ros::Time(0), ros::Duration(2.0));
+    std::string a = "world", b = "aft_mapped";
+    mTfBuffer->waitForTransform("world", "aft_mapped", rclcpp::Time(0), rclcpp::Duration(2, 0));
 
+
+    /* Look up for the transformation between target_frame and turtle2 frames */
     geometry_msgs::msg::TransformStamped transformStamped;
-
     try
     {
-        transformStamped = mTfBuffer.lookupTransform("world", "aft_mapped", tf2::TimePointZero);
+        transformStamped = mTfBuffer->lookupTransform("world", "aft_mapped", tf2::TimePointZero);
     }
-    catch (tf2::TransformException& ex)
+    catch (const tf2::TransformException& ex)
     {
-        RCLCPP_INFO(this->get_logger(), "Could not transform world to aft_mapped: %s", ex.what());
+        RCLCPP_INFO(get_logger(), "Could not transform world to aft_mapped: %s", ex.what());
         return;
     }
 
@@ -89,7 +93,9 @@ void LocalObstacleNode::mapCallback(const sensor_msgs::msg::PointCloud2::ConstSh
 
         geometry_msgs::msg::PointStamped trans_point;
 
-        mTfListener.transformPoint("world", origin_point, trans_point);
+        // mTfListener.transformPoint("world", origin_point, trans_point);
+        mTfBuffer->transform("world", origin_point, trans_point);
+        // mTfListener->transformPoint("world", origin_point, trans_point);
 
         pcl::PointXYZ point;
         if (!(-1.2 < pt.x && pt.x < 0.4 && -0.4 < pt.y && pt.y < 0.4))

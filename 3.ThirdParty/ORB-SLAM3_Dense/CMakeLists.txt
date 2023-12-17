@@ -15,7 +15,6 @@ set(DEPENDENCIES
     PCL
     CUDA
 )
-
 foreach(Dependency IN ITEMS ${DEPENDENCIES})
     find_package(${Dependency} REQUIRED)
 endforeach()
@@ -28,7 +27,6 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
-
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -43,7 +41,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     /home/avent/.CppLib/TensorRT-8.5.3.1/include
 )
 
-# ${EIGEN3_LIBS}
 target_link_libraries(${PROJECT_NAME}
     ${OpenCV_LIBS}
     ${Pangolin_LIBRARIES}

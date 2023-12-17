@@ -6,6 +6,7 @@
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <tf2_ros/transform_broadcaster.h>
+// #include <atomic>
 #include "ImuProcess.h"
 #include "PointCloudPreprocess.h"
 #include "ivox3d/ivox3d.h"
@@ -25,6 +26,14 @@ public:
 #endif
 
     Mapping(const std::string& name);
+    ~Mapping()
+    {
+        // mShutdown = true;
+        // if (mThread.joinable())
+        // {
+        //     mThread.join();
+        // }
+    }
 
     void run();
 
@@ -44,6 +53,10 @@ public:
     void finish();
 
 private:
+    /* Multi-Thread */
+    std::atomic<bool> mShutdown{false};
+    std::thread mThread;
+
     /* Modules */
     IVoxType::Options mIvoxOptions;
     std::shared_ptr<IVoxType> mIvox = nullptr;                       // local map in ivox
@@ -56,7 +69,7 @@ private:
     double mFilterSizeMapMin = 0;
     bool mLocalMapInited = false;
 
-    /* Params */
+    /* Parameters */
     std::vector<double> mExtrinT{3, 0.0};   // lidar-imu translation
     std::vector<double> mExtrinR{9, 0.0};   // lidar-imu rotation
     std::string mMapFilePath;
@@ -87,6 +100,7 @@ private:
     std::string mTfImuFrame;
     std::string mTfWorldFrame;
 
+    /* Buffers */
     std::mutex mBufferMutex;
     std::deque<double> mTimeBuffer;
     std::deque<PointCloudType::Ptr> mLidarBuffer;
@@ -140,7 +154,16 @@ private:
 
 private:
     template<typename T>
-    void setPoseStamp(T& out);
+    void setPoseStamp(T& out)
+    {
+        out.pose.position.x = mStatePoint.pos(0);
+        out.pose.position.y = mStatePoint.pos(1);
+        out.pose.position.z = mStatePoint.pos(2);
+        out.pose.orientation.x = mStatePoint.rot.coeffs()[0];
+        out.pose.orientation.y = mStatePoint.rot.coeffs()[1];
+        out.pose.orientation.z = mStatePoint.rot.coeffs()[2];
+        out.pose.orientation.w = mStatePoint.rot.coeffs()[3];
+    }
 
     void pointBodyToWorld(PointType const* pi, PointType* const po);
     void pointBodyToWorld(const common::V3F& pi, PointType* const po);

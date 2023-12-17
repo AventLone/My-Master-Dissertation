@@ -1,22 +1,22 @@
 orb_slam3_rgbd:
-   ros__parameters:
-      InputTopic:
-         RgbImage: track_cart/rgb_camera/image_color
-         DepthImage: track_cart/depth_camera/image
-      OctoMap:
-         Resolution: 0.08
-         FrameId: octomap
+    ros__parameters:
+        InputTopic:
+            RgbImage: BD_Roamer/rgb_camera/image_color
+            DepthImage: BD_Roamer/depth_camera/image
+        OctoMap:
+            Resolution: 0.05
+            FrameId: octomap
 
 occupancy_mapping:
-   ros__parameters:
-      OccupancyMap:
-         Resolution: 0.08
-         FrameId: map
-      PointCloudFilter:
-         PassThrough:
-            Axis: y
-            LimitMin: -2.0
-            LimitMax: -0.2
-         RadiusRemoval:
-            Radius: 0.5
-            MinNeighbors: 10
+    ros__parameters:
+        OccupancyMap:
+            Resolution: 0.08
+            FrameId: map
+        PointCloudFilter:
+            PassThrough:
+                Axis: y
+                LimitMin: -2.0
+                LimitMax: -0.2
+            RadiusRemoval:
+                Radius: 0.5
+                MinNeighbors: 10

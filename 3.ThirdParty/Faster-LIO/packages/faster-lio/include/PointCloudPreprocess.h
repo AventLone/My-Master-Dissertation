@@ -61,8 +61,7 @@ enum class LidarType
 };
 
 /**
- * point cloud preprocess
- * just unify the point format from livox/velodyne to PCL
+ * @brief Point cloud preprocess: just unify the point format from livox/velodyne to PCL.
  */
 class PointCloudPreprocess
 {
@@ -74,7 +73,7 @@ public:
 
     /* processors */
     void process(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg, PointCloudType::Ptr& pcl_out);
-    void set(LidarType lid_type, double bld, int pfilt_num);
+    void set(LidarType lid_type, double blind, int pfilt_num);
 
     /* accessors */
     double& blind()

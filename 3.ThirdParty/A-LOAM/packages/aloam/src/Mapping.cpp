@@ -5,7 +5,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 
-Mapping::Mapping(float line_resolution, float plane_resolution) : rclcpp::Node("alom_mapping")
+Mapping::Mapping(float line_resolution, float plane_resolution) : rclcpp::Node("aloam_mapping")
 {
     mCornerCloudArray.reserve(mCloudNum);
     mSurfCloudArray.reserve(mCloudNum);
@@ -20,12 +20,13 @@ Mapping::Mapping(float line_resolution, float plane_resolution) : rclcpp::Node("
 
     mTfBroadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(this);
     mSurroundCloudPub =
-        create_publisher<sensor_msgs::msg::PointCloud2>("aloam/surround_cloud", rclcpp::QoS(10).reliable());
-    mCloudMapPub = create_publisher<sensor_msgs::msg::PointCloud2>("aloam/cloud_map", rclcpp::QoS(10).reliable());
-    mOdomPub = create_publisher<nav_msgs::msg::Odometry>("aloam/odom", rclcpp::QoS(10).reliable());
-    mPathPub = create_publisher<nav_msgs::msg::Path>("aloam/path", rclcpp::QoS(10).reliable());
+        create_publisher<sensor_msgs::msg::PointCloud2>("aloam/surround_cloud", rclcpp::SensorDataQoS().best_effort());
+    mCloudMapPub =
+        create_publisher<sensor_msgs::msg::PointCloud2>("aloam/cloud_map", rclcpp::SensorDataQoS().best_effort());
+    mOdomPub = create_publisher<nav_msgs::msg::Odometry>("aloam/odom", rclcpp::SensorDataQoS().best_effort());
+    mPathPub = create_publisher<nav_msgs::msg::Path>("aloam/path", rclcpp::SensorDataQoS().best_effort());
 
-    mThread = std::thread(&Mapping::process, this);
+    mThread = std::thread(&Mapping::run, this);
 }
 
 void Mapping::insertCloudAndOdom(const pcl::PointCloud<pcl::PointXYZI>::Ptr& full_cloud,
@@ -42,6 +43,7 @@ void Mapping::insertCloudAndOdom(const pcl::PointCloud<pcl::PointXYZI>::Ptr& ful
     mPositionBuffer.emplace(position);
     if (mCornerCloudBuffer.size() > 30)
     {
+        RCLCPP_WARN(get_logger(), "Cloud buffers are full, have to pop out.");
         mFullCloudBuffer.pop();
         mCornerCloudBuffer.pop();
         mSurfCloudBuffer.pop();
@@ -84,11 +86,11 @@ void Mapping::publishMsgs(Eigen::Quaterniond orientation, Eigen::Vector3d positi
         tf2::toMsg(tf2::Quaternion(orientation.x(), orientation.y(), orientation.z(), orientation.w()));
     mTfBroadcaster->sendTransform(tf_msg);
 
-    sensor_msgs::msg::PointCloud2 surround_cloud_msg;
-    pcl::toROSMsg(*surround_cloud, surround_cloud_msg);
-    surround_cloud_msg.header.stamp = this->now();
-    surround_cloud_msg.header.frame_id = "camera_init";
-    mSurroundCloudPub->publish(surround_cloud_msg);
+    // sensor_msgs::msg::PointCloud2 surround_cloud_msg;
+    // pcl::toROSMsg(*surround_cloud, surround_cloud_msg);
+    // surround_cloud_msg.header.stamp = this->now();
+    // surround_cloud_msg.header.frame_id = "camera_init";
+    // mSurroundCloudPub->publish(surround_cloud_msg);
 
     sensor_msgs::msg::PointCloud2 cloud_map_msg;
     pcl::toROSMsg(*cloud_map, cloud_map_msg);
@@ -98,7 +100,7 @@ void Mapping::publishMsgs(Eigen::Quaterniond orientation, Eigen::Vector3d positi
 }
 
 
-void Mapping::process()
+void Mapping::run()
 {
     for (;;)
     {
@@ -106,7 +108,7 @@ void Mapping::process()
 
         {
             std::unique_lock<std::mutex> lock(mBufferMutex);
-            mCondition.wait(lock, [this] { return mFullCloudBuffer.size() > 0 || mShutDown; });
+            mCondition.wait(lock, [this]() { return mFullCloudBuffer.size() > 0 || mShutDown; });
             if (mShutDown) break;
 
             full_cloud = mFullCloudBuffer.front();
@@ -127,15 +129,15 @@ void Mapping::process()
 
         transformAssociateToMap();
 
-        int centerCubeI = static_cast<int>((t_w_curr.x() + 25.0) / 50.0) + mCloudCenWidth;
-        int centerCubeJ = static_cast<int>((t_w_curr.y() + 25.0) / 50.0) + mCloudCenHeight;
-        int centerCubeK = static_cast<int>((t_w_curr.z() + 25.0) / 50.0) + mCloudCenDepth;
+        int center_cubeI = static_cast<int>((t_w_curr.x() + 25.0) / 50.0) + mCloudCenWidth;
+        int center_cubeJ = static_cast<int>((t_w_curr.y() + 25.0) / 50.0) + mCloudCenHeight;
+        int center_cubeK = static_cast<int>((t_w_curr.z() + 25.0) / 50.0) + mCloudCenDepth;
 
-        if (t_w_curr.x() + 25.0 < 0) --centerCubeI;
-        if (t_w_curr.y() + 25.0 < 0) --centerCubeJ;
-        if (t_w_curr.z() + 25.0 < 0) --centerCubeK;
+        if (t_w_curr.x() + 25.0 < 0) --center_cubeI;
+        if (t_w_curr.y() + 25.0 < 0) --center_cubeJ;
+        if (t_w_curr.z() + 25.0 < 0) --center_cubeK;
 
-        while (centerCubeI < 3)
+        while (center_cubeI < 3)
         {
             for (int j = 0; j < mCloudHeight; ++j)
             {
@@ -160,11 +162,11 @@ void Mapping::process()
                     laserCloudCubeSurfPointer->clear();
                 }
             }
-            ++centerCubeI;
+            ++center_cubeI;
             ++mCloudCenWidth;
         }
 
-        while (centerCubeI >= mCloudWidth - 3)
+        while (center_cubeI >= mCloudWidth - 3)
         {
             for (int j = 0; j < mCloudHeight; ++j)
             {
@@ -189,11 +191,11 @@ void Mapping::process()
                     laserCloudCubeSurfPointer->clear();
                 }
             }
-            --centerCubeI;
+            --center_cubeI;
             --mCloudCenWidth;
         }
 
-        while (centerCubeJ < 3)
+        while (center_cubeJ < 3)
         {
             for (int i = 0; i < mCloudWidth; ++i)
             {
@@ -218,11 +220,11 @@ void Mapping::process()
                     laserCloudCubeSurfPointer->clear();
                 }
             }
-            ++centerCubeJ;
+            ++center_cubeJ;
             ++mCloudCenHeight;
         }
 
-        while (centerCubeJ >= mCloudHeight - 3)
+        while (center_cubeJ >= mCloudHeight - 3)
         {
             for (int i = 0; i < mCloudWidth; ++i)
             {
@@ -247,11 +249,11 @@ void Mapping::process()
                     laserCloudCubeSurfPointer->clear();
                 }
             }
-            --centerCubeJ;
+            --center_cubeJ;
             --mCloudCenHeight;
         }
 
-        while (centerCubeK < 3)
+        while (center_cubeK < 3)
         {
             for (int i = 0; i < mCloudWidth; ++i)
             {
@@ -276,11 +278,11 @@ void Mapping::process()
                     laserCloudCubeSurfPointer->clear();
                 }
             }
-            ++centerCubeK;
+            ++center_cubeK;
             ++mCloudCenDepth;
         }
 
-        while (centerCubeK >= mCloudDepth - 3)
+        while (center_cubeK >= mCloudDepth - 3)
         {
             for (int i = 0; i < mCloudWidth; ++i)
             {
@@ -305,18 +307,18 @@ void Mapping::process()
                     laserCloudCubeSurfPointer->clear();
                 }
             }
-            --centerCubeK;
+            --center_cubeK;
             --mCloudCenDepth;
         }
 
         int valid_cloud_num = 0;
         int surround_cloud_num = 0;
 
-        for (int i = centerCubeI - 2; i <= centerCubeI + 2; ++i)
+        for (int i = center_cubeI - 2; i <= center_cubeI + 2; ++i)
         {
-            for (int j = centerCubeJ - 2; j <= centerCubeJ + 2; ++j)
+            for (int j = center_cubeJ - 2; j <= center_cubeJ + 2; ++j)
             {
-                for (int k = centerCubeK - 1; k <= centerCubeK + 1; ++k)
+                for (int k = center_cubeK - 1; k <= center_cubeK + 1; ++k)
                 {
                     if (i >= 0 && i < mCloudWidth && j >= 0 && j < mCloudHeight && k >= 0 && k < mCloudDepth)
                     {

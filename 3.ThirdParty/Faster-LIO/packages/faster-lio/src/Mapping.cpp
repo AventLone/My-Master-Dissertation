@@ -1,8 +1,6 @@
-#include <tf2_ros/transform_broadcaster.h>
+#include "Mapping.h"
 #include <execution>
 #include <fstream>
-#include "Mapping.h"
-
 
 namespace faster_lio
 {
@@ -18,7 +16,7 @@ Mapping::Mapping(const std::string& name) : rclcpp::Node(name)
     declare_parameter("Preprocess.LidarType", 2);
     declare_parameter("Preprocess.ScanLine", 16);
     declare_parameter("Preprocess.Blind", 0.01);
-    declare_parameter("Preprocess.timeScale", 1e-3);
+    declare_parameter("Preprocess.TimeScale", 1e-3);
 
     declare_parameter("Mapping.AccCov", 0.1);
     declare_parameter("Mapping.GyrCov", 0.1);
@@ -45,15 +43,13 @@ Mapping::Mapping(const std::string& name) : rclcpp::Node(name)
 
     declare_parameter("pointFilterNum", 2);
     declare_parameter("MaxIteration", 4);
-    declare_parameter("CubeSideLength", 200);
+    declare_parameter("CubeSideLength", 200.0);
     declare_parameter("SavePath ", true);
     declare_parameter("EnableExtractFeature", false);
 
     declare_parameter("IvoxGridResolution", 0.2);
     declare_parameter("IvoxNearbyType", 18);
     declare_parameter("EstiPlaneThreashold", 0.1);
-
-    declare_parameter("map_file_path", true);
 
     /* get params from param server */
     int lidar_type, ivox_nearby_type;
@@ -70,7 +66,7 @@ Mapping::Mapping(const std::string& name) : rclcpp::Node(name)
     get_parameter("Preprocess.LidarType", lidar_type);
     get_parameter("Preprocess.ScanLine", mPreprocessor->scanNum());
     get_parameter("Preprocess.Blind", mPreprocessor->blind());
-    get_parameter("Preprocess.timeScale", mPreprocessor->timeScale());
+    get_parameter("Preprocess.TimeScale", mPreprocessor->timeScale());
 
     double acc_cov, gyr_cov, b_acc_cov, b_gyr_cov;
     get_parameter("Mapping.AccCov", acc_cov);
@@ -106,47 +102,43 @@ Mapping::Mapping(const std::string& name) : rclcpp::Node(name)
     get_parameter("IvoxNearbyType", ivox_nearby_type);
     get_parameter("EstiPlaneThreashold", options::ESTI_PLANE_THRESHOLD);
 
-    if (lidar_type == 1)
+    switch (lidar_type)
     {
-        mPreprocessor->setLidarType(LidarType::AVIA);
-        RCLCPP_INFO(get_logger(), "Using AVIA Lidar");
-    }
-    else if (lidar_type == 2)
-    {
-        mPreprocessor->setLidarType(LidarType::VELO32);
-        RCLCPP_INFO(get_logger(), "Using Velodyne 32 Lidar");
-    }
-    else if (lidar_type == 3)
-    {
-        mPreprocessor->setLidarType(LidarType::OUST64);
-        RCLCPP_INFO(get_logger(), "Using OUST 64 Lidar");
-    }
-    else
-    {
-        mPreprocessor->setLidarType(LidarType::VELO32);
-        RCLCPP_WARN(get_logger(), "Unknown lidar_type, set it to Velodyne 32 Lidar");
+        case 1:
+            mPreprocessor->setLidarType(LidarType::AVIA);
+            RCLCPP_INFO(get_logger(), "Using AVIA Lidar");
+            break;
+        case 2:
+            mPreprocessor->setLidarType(LidarType::VELO32);
+            RCLCPP_INFO(get_logger(), "Using Velodyne 32 Lidar");
+            break;
+        case 3:
+            mPreprocessor->setLidarType(LidarType::OUST64);
+            RCLCPP_INFO(get_logger(), "Using OUST 64 Lidar");
+        default:
+            mPreprocessor->setLidarType(LidarType::VELO32);
+            RCLCPP_WARN(get_logger(), "Unknown lidar_type, set it to Velodyne 32 Lidar");
+            break;
     }
 
-    if (ivox_nearby_type == 0)
+    switch (ivox_nearby_type)
     {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::CENTER;
-    }
-    else if (ivox_nearby_type == 6)
-    {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY6;
-    }
-    else if (ivox_nearby_type == 18)
-    {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY18;
-    }
-    else if (ivox_nearby_type == 26)
-    {
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY26;
-    }
-    else
-    {
-        RCLCPP_WARN(get_logger(), "Unknown ivox_nearby_type, use NEARBY18.");
-        mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY18;
+        case 0:
+            mIvoxOptions.nearby_type_ = IVoxType::NearbyType::CENTER;
+            break;
+        case 6:
+            mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY6;
+            break;
+        case 18:
+            mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY18;
+            break;
+        case 26:
+            mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY26;
+            break;
+        default:
+            RCLCPP_WARN(get_logger(), "Unknown ivox_nearby_type, use NEARBY18.");
+            mIvoxOptions.nearby_type_ = IVoxType::NearbyType::NEARBY18;
+            break;
     }
 
     mScanVoxelFilter.setLeafSize(filter_size_surf_min, filter_size_surf_min, filter_size_surf_min);
@@ -164,7 +156,7 @@ Mapping::Mapping(const std::string& name) : rclcpp::Node(name)
     mPath.header.stamp = this->now();
     mPath.header.frame_id = "camera_init";
 
-    // local map init (after loadParams)
+    /* Local map init (after loadParams) */
     mIvox = std::make_shared<IVoxType>(mIvoxOptions);
 
     /* Initiate ESEKF */
@@ -191,13 +183,16 @@ Mapping::Mapping(const std::string& name) : rclcpp::Node(name)
     /* Initiate Publishers */
     mCloudWorldPub =
         create_publisher<sensor_msgs::msg::PointCloud2>("cloud_world", rclcpp::SensorDataQoS().best_effort());
-    mCloudBodyPub =
-        create_publisher<sensor_msgs::msg::PointCloud2>("cloud_world", rclcpp::SensorDataQoS().best_effort());
-    mCloudEffectWorldPub =
-        create_publisher<sensor_msgs::msg::PointCloud2>("cloud_world", rclcpp::SensorDataQoS().best_effort());
+    // mCloudBodyPub =
+    //     create_publisher<sensor_msgs::msg::PointCloud2>("cloud_body", rclcpp::SensorDataQoS().best_effort());
+    // mCloudEffectWorldPub =
+    //     create_publisher<sensor_msgs::msg::PointCloud2>("cloud_effect_world", rclcpp::SensorDataQoS().best_effort());
     mAftMappedOdomPub = create_publisher<nav_msgs::msg::Odometry>("odom", rclcpp::SensorDataQoS().best_effort());
     mPathPub = create_publisher<nav_msgs::msg::Path>("odom_path", rclcpp::SensorDataQoS().best_effort());
+
+    // mThread = std::thread(&Mapping::run, this);
 }
+
 
 void Mapping::run()
 {
@@ -251,54 +246,122 @@ void Mapping::run()
     mCurEuler = SO3ToEuler(mStatePoint.rot);
     mLidarPosition = mStatePoint.pos + mStatePoint.rot * mStatePoint.offset_T_L_I;
 
-    mapIncremental();   // update local map
+    mapIncremental();   // Update local map
 
     RCLCPP_INFO_STREAM(get_logger(),
                        "[Mapping]: In num: " << mUndistortScan->points.size() << " downsamp " << cur_pts
                                              << " Map grid num: " << mIvox->NumValidGrids()
                                              << " effect num : " << mEffectFeatNum);
 
-    /* publish or save map pcd */
-    if (mRunOffline)
-    {
-        if (mEnableSavePcd)
-        {
-            publishFrameWorld();
-        }
-        if (mEnableSavePath)
-        {
-            publishPath();
-        }
-    }
-    else
-    {
-        // if (pub_odom_aft_mapped_)
-        // {
-        //     publishOdometry();
-        // }
-        publishOdometry();
+    publishOdometry();
+    publishFrameWorld();
+    publishPath();
+    // /* publish or save map pcd */
+    // if (mRunOffline)
+    // {
+    //     if (mEnableSavePcd)
+    //     {
+    //         publishFrameWorld();
+    //     }
+    //     if (mEnableSavePath)
+    //     {
+    //         publishPath();
+    //     }
+    // }
+    // else
+    // {
+    //     // if (pub_odom_aft_mapped_)
+    //     // {
+    //     //     publishOdometry();
+    //     // }
+    //     publishOdometry();
 
-        if (mEnablePubPath || mEnableSavePath)
-        {
-            publishPath();
-        }
-        if (mEnablePubScan || mEnableSavePcd)
-        {
-            publishFrameWorld();
-        }
-        if (mEnablePubScan && mEnablePubScanBody)
-        {
-            publishFrameBody();
-        }
-        if (mEnablePubScan && mEnablePubScanEffect)
-        {
-            publishFrameEffectWorld();
-        }
-    }
-
-    // Debug variables
-    mFrameNum++;
+    //     if (mEnablePubPath || mEnableSavePath)
+    //     {
+    //         publishPath();
+    //     }
+    //     if (mEnablePubScan || mEnableSavePcd)
+    //     {
+    //         publishFrameWorld();
+    //     }
+    //     if (mEnablePubScan && mEnablePubScanBody)
+    //     {
+    //         publishFrameBody();
+    //     }
+    //     if (mEnablePubScan && mEnablePubScanEffect)
+    //     {
+    //         publishFrameEffectWorld();
+    //     }
+    // }
+    mFrameNum++;   // Debug variables
 }
+
+// void Mapping::run()
+// {
+//     // for (;;)
+//     while (!mShutdown)
+//     {
+//         if (!syncPackages())
+//         {
+//             continue;
+//         }
+
+//         /* IMU process, kf prediction, undistortion */
+//         mImuProcessor->process(mMeasures, mESEKF, mUndistortScan);
+//         if (mUndistortScan->empty() || (mUndistortScan == nullptr))
+//         {
+//             RCLCPP_WARN(get_logger(), "No point, skip this scan!");
+//             continue;
+//         }
+
+//         /* The first scan */
+//         if (mFirstScanFlg)
+//         {
+//             mIvox->addPoints(mUndistortScan->points);
+//             mFirstLidarTime = mMeasures.lidar_bag_time;
+//             mFirstScanFlg = false;
+//             continue;
+//         }
+//         mEKFInitedFlg = (mMeasures.lidar_bag_time - mFirstLidarTime) >= options::INIT_TIME;
+
+//         /* Downsample */
+//         mScanVoxelFilter.setInputCloud(mUndistortScan);
+//         mScanVoxelFilter.filter(*mDownBodyScan);
+
+//         int cur_pts = mDownBodyScan->size();
+//         if (cur_pts < 5)
+//         {
+//             RCLCPP_WARN_STREAM(get_logger(),
+//                                "Too few points, skip this scan!" << mUndistortScan->size() << ", "
+//                                                                  << mDownBodyScan->size());
+
+//             continue;
+//         }
+//         mDownWorldScan->resize(cur_pts);
+//         mNearestPoints.resize(cur_pts);
+//         mResiduals.resize(cur_pts, 0);
+//         mSurfSelectedPoints.resize(cur_pts, true);
+//         mPlaneCoeffs.resize(cur_pts, common::V4F::Zero());
+
+//         /* ICP and iterated Kalman filter update */
+//         double solve_H_time = 0;   // iterated state estimation
+//         /* Update the observation model, will call nn and point-to-plane residual computation */
+//         mESEKF.update_iterated_dyn_share_modified(options::LASER_POINT_COV, solve_H_time);
+//         /* Save the state */
+//         mStatePoint = mESEKF.get_x();
+//         mCurEuler = SO3ToEuler(mStatePoint.rot);
+//         mLidarPosition = mStatePoint.pos + mStatePoint.rot * mStatePoint.offset_T_L_I;
+
+//         mapIncremental();   // update local map
+
+//         publishFrameWorld();
+//         publishPath();
+//         publishOdometry();
+
+//         mFrameNum++;   // Debug variables
+//         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+//     }
+// }
 
 void Mapping::lidarCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg)
 {
@@ -311,7 +374,6 @@ void Mapping::lidarCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr&
         RCLCPP_WARN(get_logger(), "Lidar loop back, clear buffer.");
         mLidarBuffer.clear();
     }
-    rclcpp::Time();
     PointCloudType::Ptr ptr(new PointCloudType());
     mPreprocessor->process(msg, ptr);
     mLidarBuffer.push_back(ptr);
@@ -476,21 +538,12 @@ void Mapping::mapIncremental()
                       }
                   });
 
-    // Timer::evaluate(
-    //     [&, this]()
-    //     {
-    //         mIvox->addPoints(points_to_add);
-    //         mIvox->addPoints(point_no_need_downsample);
-    //     },
-    //     "    IVox Add Points");
-
     mIvox->addPoints(points_to_add);
     mIvox->addPoints(point_no_need_downsample);
 }
 
 /**
- * Lidar point cloud registration
- * will be called by the eskf custom observation model
+ * @brief Lidar point cloud registration, will be called by the eskf custom observation model
  * compute point-to-plane residual here
  * @param s kf state
  * @param ekfom_data H matrix
@@ -622,7 +675,6 @@ void Mapping::obsModel(state_ikfom& s, esekfom::dyn_share_datastruct<double>& ek
 void Mapping::publishPath()
 {
     setPoseStamp(mBodyPoseMsg);
-    // mBodyPoseMsg.header.stamp = ros::Time().fromSec(mLidarEndTime);
     mBodyPoseMsg.header.stamp = rclcpp::Time(mLidarEndTime * 1e9);
     mBodyPoseMsg.header.frame_id = "camera_init";
 
@@ -638,7 +690,6 @@ void Mapping::publishOdometry()
 {
     mAftMappedOdom.header.frame_id = "camera_init";
     mAftMappedOdom.child_frame_id = "body";
-    // mAftMappedOdom.header.stamp = ros::Time().fromSec(mLidarEndTime);   // ros::Time().fromSec(mLidarEndTime);
     mAftMappedOdom.header.stamp = rclcpp::Time(mLidarEndTime * 1e9);
     setPoseStamp(mAftMappedOdom.pose);
     mAftMappedOdomPub->publish(mAftMappedOdom);
@@ -693,7 +744,6 @@ void Mapping::publishFrameWorld()
     {
         sensor_msgs::msg::PointCloud2 cloud_msg;
         pcl::toROSMsg(*cloud_world, cloud_msg);
-        // cloud_msg.header.stamp = ros::Time().fromSec(mLidarEndTime);
         cloud_msg.header.stamp = rclcpp::Time(mLidarEndTime * 1e9);
         cloud_msg.header.frame_id = "camera_init";
         mCloudWorldPub->publish(cloud_msg);
@@ -702,25 +752,26 @@ void Mapping::publishFrameWorld()
 
     /**************** save map ****************/
     /* 1. make sure you have enough memories
-    /* 2. noted that pcd save will influence the real-time performences **/
-    if (mEnableSavePcd)
-    {
-        *mPclWaitSave += *cloud_world;
+       2. noted that pcd save will influence the real-time performences */
+    // if (mEnableSavePcd)
+    // {
+    //     *mPclWaitSave += *cloud_world;
 
-        static int scan_wait_num = 0;
-        scan_wait_num++;
-        if (mPclWaitSave->size() > 0 && mPcdSaveInterval > 0 && scan_wait_num >= mPcdSaveInterval)
-        {
-            mPcdIndex++;
-            std::string all_points_dir(std::string(std::string(ROOT_DIR) + "PCD/scans_") + std::to_string(mPcdIndex) +
-                                       std::string(".pcd"));
-            pcl::PCDWriter pcd_writer;
-            // LOG(INFO) << "current scan saved to /PCD/" << all_points_dir;
-            pcd_writer.writeBinary(all_points_dir, *mPclWaitSave);
-            mPclWaitSave->clear();
-            scan_wait_num = 0;
-        }
-    }
+    //     static int scan_wait_num = 0;
+    //     scan_wait_num++;
+    //     if (mPclWaitSave->size() > 0 && mPcdSaveInterval > 0 && scan_wait_num >= mPcdSaveInterval)
+    //     {
+    //         mPcdIndex++;
+    //         std::string all_points_dir(std::string(std::string(ROOT_DIR) + "PCD/scans_") + std::to_string(mPcdIndex)
+    //         +
+    //                                    std::string(".pcd"));
+    //         pcl::PCDWriter pcd_writer;
+    //         RCLCPP_INFO_STREAM(get_logger(), "Current scan saved to /PCD/" << all_points_dir);
+    //         pcd_writer.writeBinary(all_points_dir, *mPclWaitSave);
+    //         mPclWaitSave->clear();
+    //         scan_wait_num = 0;
+    //     }
+    // }
 }
 
 void Mapping::publishFrameBody()
@@ -735,7 +786,6 @@ void Mapping::publishFrameBody()
 
     sensor_msgs::msg::PointCloud2 cloud_msg;
     pcl::toROSMsg(*laser_cloud_imu_body, cloud_msg);
-    // cloud_msg.header.stamp = ros::Time().fromSec(mLidarEndTime);
     cloud_msg.header.stamp = rclcpp::Time(mLidarEndTime * 1e9);
     cloud_msg.header.frame_id = "body";
     mCloudBodyPub->publish(cloud_msg);
@@ -780,18 +830,6 @@ void Mapping::saveTrajectory(const std::string& traj_file)
     ofs.close();
 }
 
-template<typename T>
-void Mapping::setPoseStamp(T& out)
-{
-    out.pose.position.x = mStatePoint.pos(0);
-    out.pose.position.y = mStatePoint.pos(1);
-    out.pose.position.z = mStatePoint.pos(2);
-    out.pose.orientation.x = mStatePoint.rot.coeffs()[0];
-    out.pose.orientation.y = mStatePoint.rot.coeffs()[1];
-    out.pose.orientation.z = mStatePoint.rot.coeffs()[2];
-    out.pose.orientation.w = mStatePoint.rot.coeffs()[3];
-}
-
 void Mapping::pointBodyToWorld(const PointType* pi, PointType* const po)
 {
     common::V3D p_body(pi->x, pi->y, pi->z);
@@ -813,7 +851,7 @@ void Mapping::pointBodyToWorld(const common::V3F& pi, PointType* const po)
     po->x = p_global(0);
     po->y = p_global(1);
     po->z = p_global(2);
-    po->intensity = std::abs(po->z);
+    po->intensity = std::fabs(po->z);
 }
 
 void Mapping::pointBodyLidarToIMU(PointType const* const pi, PointType* const po)

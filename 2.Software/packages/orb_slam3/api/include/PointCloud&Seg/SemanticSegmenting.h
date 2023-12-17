@@ -24,9 +24,6 @@ struct Deleter
 template<typename T>
 using UniquePtr = std::unique_ptr<T, Deleter>;
 
-// template<typename T>
-// using SharedPtr = std::shared_ptr<T, Deleter>;
-
 /********************************************************************************
  * @brief
  * 用于创建IBuilder、IRuntime或IRefitter实例的记录器用于通过该接口创建的所有对象。
@@ -64,7 +61,7 @@ private:
     double mStd{1.0 / 255.0};
     cv::Scalar mMean{0.0, 0.0, 0.0};
 
-    /*** Buffer ***/
+    /*** Buffers ***/
     void* mCudaBuffer[2];   // GPU memory buffer.
     cv::Mat mOutput;        // A buffer storing output of the net.
 

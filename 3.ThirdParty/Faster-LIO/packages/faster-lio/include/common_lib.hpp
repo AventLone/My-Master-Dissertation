@@ -1,22 +1,15 @@
 #pragma once
-// #include <eigen_conversions/eigen_msg.h>
 #include <deque>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/imu.hpp>
-
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <unsupported/Eigen/ArpackSupport>
-
-// #include "faster_lio/Pose6D.h"
-#include <faster_lio_msgs/msg/pose6_d.hpp>
+#include <faster_lio/msg/pose6_d.hpp>
 #include "options.h"
 #include "so3_math.hpp"
-
-#define ROOT_DIR "/home/avent/"
 
 using PointType = pcl::PointXYZINormal;
 using PointCloudType = pcl::PointCloud<PointType>;
@@ -60,7 +53,7 @@ inline std::string DEBUG_FILE_DIR(const std::string& name)
     return std::string(ROOT_DIR) + "Log/" + name;
 }
 
-using Pose6Dmsg = faster_lio_msgs::msg::Pose6D;
+using Pose6Dmsg = faster_lio::msg::Pose6D;
 using V3D = Eigen::Vector3d;
 using V4D = Eigen::Vector4d;
 using V5D = Eigen::Matrix<double, 5, 1>;

@@ -12,7 +12,6 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/project
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/BrushedAluminium.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Asphalt.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Grass.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/GlossyPaint.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Wall.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Roughcast.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/devices/velodyne/protos/VelodyneVLP-16.proto"
@@ -27,8 +26,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.09445801267237224 -0.5780367361665224 -0.8105252713419492 5.885264837569766
-  position -13.413427714919115 5.281693428139061 3.464087013619049
+  orientation 0.2268499133818537 -0.8632020496705521 -0.45102254737784825 5.228003572707101
+  position -12.610038640908455 3.203771728117098 10.631406686393394
 }
 TexturedBackground {
   texture "noon_cloudy_countryside"
@@ -225,7 +224,7 @@ DEF Trees Group {
     }
   ]
 }
-DEF trackCart Robot {
+DEF BD_Roamer Robot {
   translation -8.90845 7.16731 2.53371
   rotation 0.29725704531698866 -0.1915050291950397 -0.935395142601468 0.0691311
   children [
@@ -241,52 +240,6 @@ DEF trackCart Robot {
         }
       ]
     }
-    DEF RealSense Group {
-      children [
-        Camera {
-          translation 0.18 0 0.36
-          children [
-            Shape {
-              appearance BrushedAluminium {
-              }
-              geometry Mesh {
-                url [
-                  "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/camera_link.STL"
-                ]
-              }
-              castShadows FALSE
-            }
-          ]
-          name "rgb-camera"
-          width 640
-          height 480
-        }
-        RangeFinder {
-          translation 0.18 0 0.36
-          name "depth-camera"
-          width 640
-          height 480
-          maxRange 10
-        }
-        Solid {
-          translation 0.18 -9.91764e-07 0.36
-          rotation 1 0 0 1.5708
-          children [
-            Shape {
-              appearance GlossyPaint {
-                baseColor 0 0 0
-              }
-              geometry Capsule {
-                height 0.065
-                radius 0.0096
-              }
-              castShadows FALSE
-            }
-          ]
-          name "decorate for camera"
-        }
-      ]
-    }
     Solid {
       translation -0.2 -0.13 0.02
       children [
@@ -295,7 +248,7 @@ DEF trackCart Robot {
           }
           geometry Mesh {
             url [
-              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/left_wheel_link.STL"
+              "/home/avent/Public/Dissertation/3.ThirdParty/A-LOAM/packages/webots_simulation/worlds/track_cart_mesh/left_wheel_link.STL"
             ]
           }
           castShadows FALSE
@@ -311,7 +264,7 @@ DEF trackCart Robot {
           }
           geometry Mesh {
             url [
-              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/left_wheel_link.STL"
+              "/home/avent/Public/Dissertation/3.ThirdParty/A-LOAM/packages/webots_simulation/worlds/track_cart_mesh/left_wheel_link.STL"
             ]
           }
           castShadows FALSE
@@ -326,7 +279,7 @@ DEF trackCart Robot {
           }
           geometry Mesh {
             url [
-              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/big_support_wheel_link.STL"
+              "/home/avent/Public/Dissertation/3.ThirdParty/A-LOAM/packages/webots_simulation/worlds/track_cart_mesh/big_support_wheel_link.STL"
             ]
           }
           castShadows FALSE
@@ -341,7 +294,7 @@ DEF trackCart Robot {
           }
           geometry Mesh {
             url [
-              "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/support_wheel_link.STL"
+              "/home/avent/Public/Dissertation/3.ThirdParty/A-LOAM/packages/webots_simulation/worlds/track_cart_mesh/support_wheel_link.STL"
             ]
           }
           castShadows FALSE
@@ -587,12 +540,12 @@ DEF trackCart Robot {
       }
       geometry Mesh {
         url [
-          "/home/avent/Public/Dissertation/Host/packages/track_cart_drive_sim/worlds/track_cart_mesh/base_link.STL"
+          "/home/avent/Public/Dissertation/3.ThirdParty/A-LOAM/packages/webots_simulation/worlds/track_cart_mesh/base_link.STL"
         ]
       }
     }
   ]
-  name "track cart"
+  name "BD_Roamer"
   boundingObject Box {
     size 0.44655181297627616 0.1 0.05487380027318713
   }
@@ -4478,7 +4431,7 @@ DEF Grass Group {
               name "grass_4"
             }
             Solid {
-              translation 2.97 0.99 2.77
+              translation 2.97 0.99 2.82
               children [
                 Shape {
                   appearance Grass {
@@ -4493,7 +4446,7 @@ DEF Grass Group {
               name "grass_5"
             }
             Solid {
-              translation 1.9 2.54 2.81
+              translation 1.9 2.54 2.9
               children [
                 Shape {
                   appearance Grass {
@@ -4634,7 +4587,7 @@ DEF Grass Group {
               name "grass_4"
             }
             Solid {
-              translation 1.37 5.81 2.77
+              translation 1.37 5.81 2.94
               children [
                 Shape {
                   appearance Grass {
@@ -4649,7 +4602,7 @@ DEF Grass Group {
               name "grass_5"
             }
             Solid {
-              translation 0.44 0.98 2.81
+              translation 0.44 0.98 2.75
               children [
                 Shape {
                   appearance Grass {
@@ -4679,7 +4632,7 @@ DEF Grass Group {
               name "grass_7"
             }
             Solid {
-              translation -0.01 0.01 2.8
+              translation -0.01 0.01 2.74
               children [
                 Shape {
                   appearance Grass {
@@ -4790,7 +4743,7 @@ DEF Grass Group {
               name "grass_4"
             }
             Solid {
-              translation -1.38 1.15 2.77
+              translation -1.38 1.15 2.73
               children [
                 Shape {
                   appearance Grass {
