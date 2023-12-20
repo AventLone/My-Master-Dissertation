@@ -2,125 +2,248 @@
 
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/backgrounds/protos/TexturedBackground.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/BrushedAluminium.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/floors/protos/UnevenTerrain.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/SandyGround.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/trees/protos/Cypress.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/trees/protos/Pine.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/trees/protos/Oak.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/trees/protos/BigSassafras.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/CarpetFibers.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/BrushedAluminium.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Asphalt.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/floors/protos/RectangleArena.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Door.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Radiator.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Window.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/bathroom/protos/BathroomSink.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/bathroom/protos/Bathtube.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/bedroom/protos/Bed.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/bathroom/protos/Toilet.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/chairs/protos/OfficeChair.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/living_room_furniture/protos/Sofa.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/GlossyPaint.proto"
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/apartment_structure/protos/Wall.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/advertising_board/protos/AdvertisingBoard.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Roughcast.proto"
 
 WorldInfo {
   contactProperties [
     ContactProperties {
       forceDependentSlip [
-        0.01
+        0.006
       ]
     }
   ]
 }
 Viewpoint {
-  orientation -0.20777227091512585 0.8049760968747187 0.55573749819417 0.8264614077625971
-  position -3.8329259498326707 -2.8109204001564185 2.6920277056396804
-  follow "BD_Roamer"
-}
-RectangleArena {
-  floorSize 10 10
-}
-Toilet {
-  translation 3.05 -3.65 0
-  rotation 0 0 1 3.14159
+  orientation 0.09883208089465302 -0.9656861664525682 -0.24017170463686105 5.477505298256926
+  position -18.597155668919118 5.519333400388065 13.06638121118377
+  follow "uneven terrain"
 }
 TexturedBackground {
   texture "noon_cloudy_countryside"
+  luminosity 2
 }
 TexturedBackgroundLight {
   texture "noon_sunny_garden"
-  luminosity 2
+  luminosity 3
+  castShadows FALSE
 }
-DEF Room Group {
+UnevenTerrain {
+  translation 0 0 -0.01
+  size 36 36 6
+  appearance SandyGround {
+    colorOverride 0.7 0.4782 0.2431
+    textureTransform TextureTransform {
+      scale 50 50
+    }
+  }
+  randomSeed 2
+  perlinNOctaves 1
+}
+DEF Trees Group {
   children [
-    AdvertisingBoard {
-      translation -2.85784 2.87 0
-      rotation 0 0 1 1.5708
-      displayWidth 2
-      displayHeight 2
-      frameThickness 0.4
+    DEF Pine Group {
+      children [
+        Pine {
+          translation 6.46 -5.76 2.92
+          name "pine tree 1"
+        }
+        Pine {
+          translation -6.42 -3.79 2.71
+          name "pine tree 2"
+        }
+        Pine {
+          translation -8.08 1.87 1.55
+          name "pine tree 2(2)"
+        }
+        Pine {
+          translation -0.13 -7.34 2.71
+          rotation 1 0 0 4.692820414042842e-06
+          name "pine tree 2(1)"
+        }
+        Pine {
+          translation -6.42 7.13 1.79
+          name "pine tree 3"
+        }
+        Pine {
+          translation -13.26 13.55 2.48
+          rotation 1 0 0 4.692820414042842e-06
+          name "pine tree 4"
+        }
+        Pine {
+          translation -15.06 0.94 1.84
+          name "pine tree 5"
+        }
+        Pine {
+          translation 2.63 -0.19 2.54
+          name "pine tree 6"
+        }
+        Pine {
+          translation 4.73 -11.88 2.92
+          rotation 0 1 0 4.692820414042842e-06
+          name "pine tree 7"
+        }
+      ]
     }
-    Wall {
-      translation -4.83 -0.01 0
-      name "wall_1"
-      size 0.2 10 2.4
+    DEF Oak Group {
+      children [
+        Oak {
+          translation 5.93 4.68 2.25
+          name "oak tree 1"
+        }
+        Oak {
+          translation 11.86 -6.21 3.18
+          name "oak tree 2"
+        }
+        Oak {
+          translation -2.89 16.04 2.38
+          name "oak tree 3"
+        }
+        Oak {
+          translation -11.61 3.48 2.29
+          name "oak tree 4"
+        }
+        Oak {
+          translation -2.89 3.74 2.42
+          name "oak tree 5"
+        }
+        Oak {
+          translation -12.79 -1.69 2.58
+          name "oak tree 6"
+        }
+        Oak {
+          translation -2.89 -1.63 2.96
+          name "oak tree 7"
+        }
+        Oak {
+          translation 1.56 0 2.82
+          name "oak tree 8"
+        }
+        Oak {
+          translation -0.78 5.9 2.11
+          name "oak tree 9"
+        }
+        Oak {
+          translation 10.04 3.84 2.23
+          name "oak tree 10"
+        }
+        Oak {
+          translation 12.36 -4.73 2.53
+          name "oak tree 11"
+        }
+        Oak {
+          translation 1.56 14.25 2.03
+          name "oak tree 12"
+        }
+      ]
     }
-    Wall {
-      translation -0.0500004 4.82 0
-      rotation 0 0 1 1.5708
-      name "wall_2"
-      size 0.2 10 2.4
+    DEF Oak Group {
+      children [
+        Oak {
+          translation -10.02 10.55 2.18
+          name "oak tree 1(1)"
+        }
+        Oak {
+          translation -13.61 4.73 2.11
+          name "oak tree 2(1)"
+        }
+        Oak {
+          translation -15.32 9.11 2.31
+          name "oak tree 3(1)"
+        }
+        Oak {
+          translation -11.61 8.28 2.29
+          name "oak tree 4(1)"
+        }
+      ]
     }
-    Wall {
-      translation 4.88 -0.01 0
-      name "wall_3"
-      size 0.2 10 2.4
+    DEF BigSassafras Group {
+      children [
+        BigSassafras {
+          translation 11.51 -15.66 3.06
+          name "sassafras tree 1"
+        }
+        BigSassafras {
+          translation 10.99 16.08 2.49
+          name "sassafras tree 2"
+        }
+        BigSassafras {
+          translation -4.74 13.05 2.24
+          name "sassafras tree 3"
+        }
+        BigSassafras {
+          translation 14.97 5.27 2.12
+          name "sassafras tree 4"
+        }
+        BigSassafras {
+          translation -14.77 -10.28 2.32
+          name "sassafras tree 5"
+        }
+        BigSassafras {
+          translation 6.84 0 2.32
+          name "sassafras tree 5(1)"
+        }
+      ]
     }
-    Wall {
-      translation -0.19 -4.71 0
-      rotation 0 0 1 -1.5707953071795862
-      name "wall_4"
-      size 0.2 10 2.4
-    }
-    Sofa {
-      translation -3.16 -3.14 0
-    }
-    OfficeChair {
-      translation -2.8400008523868436 -2.8662690125805506e-05 -0.0014145377399540915
-      rotation -0.0007075332517490389 -0.0006972869135538033 -0.9999995065937071 1.5707942673834745
-    }
-    Bathtube {
-      translation 3.04 2.82 0
-      rotation 0 0 1 1.5708
-    }
-    Bed {
-      translation 2.51 0 0
-    }
-    BathroomSink {
-      translation -0.91 2.46 0.51
-      rotation 0 0 1 -1.5707953071795862
-    }
-    Window {
-      translation 0.51 -2.36 0
-    }
-    Radiator {
-      translation 0 2.92 0.3
-    }
-    Door {
-      translation 0 0.69 0
-      position -0.00014940745248626954
+    DEF Cypress Group {
+      children [
+        Cypress {
+          translation 15.84 7.52 2.14
+          name "cypress tree 1"
+        }
+        Cypress {
+          translation 3.06 15.68 2.2
+          name "cypress tree 2"
+        }
+        Cypress {
+          translation 2.17 3.96 2.3
+          rotation 1 0 0 4.692820414042842e-06
+          name "cypress tree 3"
+        }
+        Cypress {
+          translation 10.56 1.2 2.6
+          name "cypress tree 4"
+        }
+        Cypress {
+          translation 6.17 15.75 2.32
+          name "cypress tree 5"
+        }
+        Cypress {
+          translation 15 12.36 2.39
+          name "cypress tree 6"
+        }
+      ]
     }
   ]
 }
-DEF BD-Roamer Robot {
-  translation -1.27823 -1.84627 0.0743953
-  rotation -0.0014958792967629424 0.0016439492271528725 -0.9999975298849834 -1.4771953071795858
+DEF BD_Roamer Robot {
+  translation -8.90845 7.16731 2.53371
+  rotation 0.29725704531698866 -0.1915050291950397 -0.935395142601468 0.0691311
   children [
-    DEF DepthCamera Group {
+    DEF IMU Group {
       children [
-        RangeFinder {
+        Gyro {
           translation 0.18 0 0.36
-          name "depth-camera"
-          fieldOfView 1
-          width 640
-          height 480
-          maxRange 10
+          rotation 0.5773529358523396 -0.5773499358526729 0.5773479358528951 -2.094395307179586
         }
+        Accelerometer {
+          translation 0.18 0 0.36
+          rotation 0.5773509358554485 -0.5773509358554485 0.5773489358556708 -2.094395307179586
+        }
+      ]
+    }
+    DEF RealSense Group {
+      children [
         Camera {
           translation 0.18 0 0.36
           children [
@@ -136,21 +259,32 @@ DEF BD-Roamer Robot {
             }
           ]
           name "rgb-camera"
-          fieldOfView 1
           width 640
           height 480
         }
-      ]
-    }
-    DEF Imu Group {
-      children [
-        Accelerometer {
+        RangeFinder {
           translation 0.18 0 0.36
-          rotation 0.5773509358554485 -0.5773509358554485 0.5773489358556708 -2.094395307179586
+          name "depth-camera"
+          width 640
+          height 480
+          maxRange 10
         }
-        Gyro {
-          translation 0.18 0 0.36
-          rotation 0.5773509358554485 -0.5773509358554485 0.5773489358556708 -2.094395307179586
+        Solid {
+          translation 0.18 -9.91764e-07 0.36
+          rotation 1 0 0 1.5708
+          children [
+            Shape {
+              appearance GlossyPaint {
+                baseColor 0 0 0
+              }
+              geometry Capsule {
+                height 0.065
+                radius 0.0096
+              }
+              castShadows FALSE
+            }
+          ]
+          name "decorate for camera"
         }
       ]
     }
@@ -468,4 +602,68 @@ DEF BD-Roamer Robot {
     mass 10
   }
   controller "<extern>"
+}
+DEF Pool Fluid {
+  translation 5.2 7.71 2.38
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 1
+        roughness 1
+      }
+      geometry Cylinder {
+        height 0.1
+        radius 10
+      }
+    }
+  ]
+}
+DEF Wall Group {
+  children [
+    Wall {
+      translation -18 0 2
+      size 0.2 36 6
+      appearance Roughcast {
+        colorOverride 0 0 0
+        textureTransform TextureTransform {
+          scale 2.4 1
+        }
+      }
+    }
+    Wall {
+      translation 18 0 2
+      name "wall(1)"
+      size 0.2 36 6
+      appearance Roughcast {
+        colorOverride 0 0 0
+        textureTransform TextureTransform {
+          scale 2.4 1
+        }
+      }
+    }
+    Wall {
+      translation 0 -18 2
+      rotation 0 0 1 -1.5707953071795862
+      name "wall(2)"
+      size 0.2 36 6
+      appearance Roughcast {
+        colorOverride 0 0 0
+        textureTransform TextureTransform {
+          scale 2.4 1
+        }
+      }
+    }
+    Wall {
+      translation 0 18 2
+      rotation 0 0 1 -1.5707953071795862
+      name "wall(3)"
+      size 0.2 36 6
+      appearance Roughcast {
+        colorOverride 0 0 0
+        textureTransform TextureTransform {
+          scale 2.4 1
+        }
+      }
+    }
+  ]
 }

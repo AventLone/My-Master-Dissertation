@@ -1,6 +1,5 @@
 import os
 from launch import LaunchDescription
-# from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.actions import IncludeLaunchDescription
@@ -12,7 +11,6 @@ def generate_launch_description():
     # ----- Define the path of some packages ------ #
     this_pkg = FindPackageShare(package="robot_launch").find("robot_launch")
     simulation_pkg = FindPackageShare(package="webots_simulation").find("webots_simulation")
-    # robot_description_pkg = FindPackageShare(package="robot_description").find("robot_description")
     orb_slam3_pkg = FindPackageShare(package="orb_slam3").find("orb_slam3")
 
     # Launch Orb-SLAM3 Node
@@ -26,8 +24,9 @@ def generate_launch_description():
     tf2_node = Node(
         package="tf2_ros", executable="static_transform_publisher", output="screen", emulate_tty=True,
         arguments=[
-            '--x', '-0.187658698280417', '--y', '0.0', '--z', '-0.0983819003855137',
-            '--roll', '0', '--pitch', '0', '--yaw', '0',
+            # '--x', '-0.187658698280417', '--y', '0.0', '--z', '-0.4583819003855137',
+            '--x', '-0.187658698280417', '--y', '0.0', '--z', '-0.6583819003855137',
+            '--roll', '0.0', '--pitch', '0.0', '--yaw', '0.0',
             '--frame-id', 'odom', '--child-frame-id', 'base_link',
             '--ros-args', '--log-level', 'warn'
         ]

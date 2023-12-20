@@ -26,7 +26,7 @@ endforeach()
 # `webots_ros2_driver`
 
 # Export the plugin configuration file
-pluginlib_export_plugin_description_file(webots_ros2_driver track_cart_driver.xml)
+pluginlib_export_plugin_description_file(webots_ros2_driver robot_driver.xml)
 
 # RobotDriver library
 add_library(${PROJECT_NAME} SHARED src/RobotDriver.cpp)

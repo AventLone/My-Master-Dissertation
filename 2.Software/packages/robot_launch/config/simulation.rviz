@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Odometry1/Topic1
-        - /Point Cloud1
       Splitter Ratio: 0.5
     Tree Height: 916
   - Class: rviz_common/Selection
@@ -45,7 +44,7 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 10
+      Plane Cell Count: 16
       Reference Frame: <Fixed Frame>
       Value: true
     - Alpha: 1
@@ -120,8 +119,6 @@ Visualization Manager:
           Value: true
         camera_link:
           Value: true
-        cloud_map:
-          Value: true
         left_wheel_link:
           Value: true
         odom:
@@ -132,13 +129,15 @@ Visualization Manager:
           Value: true
         track_link:
           Value: true
+        world:
+          Value: true
       Marker Scale: 0.800000011920929
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        cloud_map:
+        world:
           odom:
             base_link:
               big_support_wheel_link:
@@ -159,7 +158,7 @@ Visualization Manager:
       Buffer Length: 1
       Class: rviz_default_plugins/Path
       Color: 255; 255; 255
-      Enabled: false
+      Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
@@ -182,7 +181,7 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /orb_slam3/odom_path
-      Value: false
+      Value: true
     - Angle Tolerance: 0.10000000149011612
       Class: rviz_default_plugins/Odometry
       Covariance:
@@ -222,10 +221,6 @@ Visualization Manager:
         Reliability Policy: Best Effort
         Value: /orb_slam3/odom
       Value: false
-    - Class: rviz_common/Group
-      Displays: ~
-      Enabled: true
-      Name: Point Cloud
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -255,7 +250,7 @@ Visualization Manager:
         Durability Policy: Volatile
         Filter size: 10
         History Policy: Keep Last
-        Reliability Policy: Reliable
+        Reliability Policy: Best Effort
         Value: /orb_slam3/cloud_map
       Use Fixed Frame: true
       Use rainbow: true
@@ -263,7 +258,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: cloud_map
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
   Tools:
@@ -306,25 +301,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 16.0443172454834
+      Distance: 12.224013328552246
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.6372499465942383
-        Y: 1.7965956926345825
-        Z: 0.27886125445365906
+        X: 4.529740810394287
+        Y: -1.5277849435806274
+        Z: -0.6429623961448669
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5797969102859497
+      Pitch: 0.4397972822189331
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.176750898361206
+      Yaw: 3.17303729057312
     Saved: ~
 Window Geometry:
   Displays:

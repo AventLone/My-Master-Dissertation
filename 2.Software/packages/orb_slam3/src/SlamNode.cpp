@@ -3,11 +3,7 @@
 #include <tf2_eigen/tf2_eigen.hpp>
 #include <pcl/common/transforms.h>
 #include <pcl_conversions/pcl_conversions.h>
-
-static inline double getSec(const builtin_interfaces::msg::Time& time_stamp)
-{
-    return static_cast<double>(time_stamp.sec) + static_cast<double>(time_stamp.nanosec) * 1e-9;
-}
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 SlamNode::SlamNode(const std::string& name) : rclcpp::Node(name)
 {
@@ -32,12 +28,9 @@ SlamNode::SlamNode(const std::string& name) : rclcpp::Node(name)
                                                   this_package_path + "/model/semantic_segmentation.trt");
 
     Eigen::Transform<float, 3, Eigen::Affine> tmp_tran = Eigen::Transform<float, 3, Eigen::Affine>::Identity();
-    tmp_tran.rotate(Eigen::AngleAxis<float>(M_PI / 2, Eigen::Vector3f::UnitZ()));
-    tmp_tran.rotate(Eigen::AngleAxis<float>(-M_PI / 2, Eigen::Vector3f::UnitY()));
+    tmp_tran.rotate(Eigen::AngleAxis<float>(M_PI / 2.0, Eigen::Vector3f::UnitZ()));
+    tmp_tran.rotate(Eigen::AngleAxis<float>(-M_PI / 2.0, Eigen::Vector3f::UnitY()));
     mTrviz = tmp_tran.matrix().inverse();
-    tmp_tran = Eigen::Transform<float, 3, Eigen::Affine>::Identity();
-    mTodom = tmp_tran.matrix();
-    mTcr = tmp_tran.inverse();
 
     /* Initiate subscriptions, publishers, timers and tf */
     mRgbSub = new message_filters::Subscriber<sensor_msgs::msg::Image>(this, rgb_img_topic);
@@ -50,24 +43,24 @@ SlamNode::SlamNode(const std::string& name) : rclcpp::Node(name)
     // mMutiThreadCallback = create_callback_group(rclcpp::CallbackGroupType::Reentrant);
     // mSingleThreadCallback = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
+    mPathMsg.header.frame_id = "world";
+    geometry_msgs::msg::PoseStamped pose_msg;
+    mPathMsg.poses.push_back(pose_msg);
+
     mImuSub =
         create_subscription<sensor_msgs::msg::Imu>("BD_Roamer/imu",
                                                    rclcpp::SensorDataQoS().best_effort(),
                                                    std::bind(&SlamNode::imuCallback, this, std::placeholders::_1));
 
     mCloudMapPub =
-        create_publisher<sensor_msgs::msg::PointCloud2>("orb_slam3/cloud_map", rclcpp::SensorDataQoS().reliable());
+        create_publisher<sensor_msgs::msg::PointCloud2>("orb_slam3/cloud_map", rclcpp::SensorDataQoS().best_effort());
     mOdomPub = create_publisher<nav_msgs::msg::Odometry>("orb_slam3/odom", rclcpp::ServicesQoS().reliable());
-    mPathPub = create_publisher<nav_msgs::msg::Path>("orb_slam3/odom_path", rclcpp::SensorDataQoS().reliable());
+    mPathPub = create_publisher<nav_msgs::msg::Path>("orb_slam3/odom_path", rclcpp::SensorDataQoS().best_effort());
 
     mTfBroadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(this);
 
-    // mTimer[0] = create_wall_timer(
-    //     std::chrono::milliseconds(200), std::bind(&SlamNode::publishCloudMap, this), mMutiThreadCallback);
-    // mTimer[1] = create_wall_timer(
-    //     std::chrono::milliseconds(100), std::bind(&SlamNode::publishNavMsgs, this), mMutiThreadCallback);
     mTimer[0] = create_wall_timer(std::chrono::milliseconds(200), std::bind(&SlamNode::publishCloudMap, this));
-    mTimer[1] = create_wall_timer(std::chrono::milliseconds(180), std::bind(&SlamNode::publishNavMsgs, this));
+    mTimer[1] = create_wall_timer(std::chrono::milliseconds(120), std::bind(&SlamNode::publishNavMsgs, this));
 }
 
 void SlamNode::rgbDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr& rgb_msg,
@@ -88,7 +81,7 @@ void SlamNode::rgbDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr& r
     cv_bridge::CvImageConstPtr cv_ptrD;
     try
     {
-        // cv_ptrD = cv_bridge::toCvCopy(depth_msg, "16UC1");32FC1
+        // cv_ptrD = cv_bridge::toCvCopy(depth_msg, "32FC1");   // 32FC1
         cv_ptrD = cv_bridge::toCvShare(depth_msg);
     }
     catch (const cv_bridge::Exception& e)
@@ -103,8 +96,8 @@ void SlamNode::rgbDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr& r
         cv::cvtColor(cv_ptrRGB->image, rgb_img, cv::COLOR_BGRA2RGB);
         cv::Mat depth = cv_ptrD->image * 1000;   // Convert the unit "meter" to "millimeter"
         depth.convertTo(depth_img, CV_16UC1);
-        mTcw = mSlamer->TrackRGBD(rgb_img, depth_img, getSec(cv_ptrRGB->header.stamp), mImuMeas);
-        // mTcw = mSlamer->TrackRGBD(rgb_img, depth_img, getSec(cv_ptrRGB->header.stamp));
+        mTcw = mSlamer->TrackRGBD(
+            rgb_img, depth_img, static_cast<rclcpp::Time>(cv_ptrRGB->header.stamp).seconds(), mImuMeas);
         mImuMeas.clear();
     }
     else
@@ -122,7 +115,7 @@ void SlamNode::imuCallback(const sensor_msgs::msg::Imu::ConstSharedPtr& imu_msg)
                                 imu_msg->angular_velocity.x,
                                 imu_msg->angular_velocity.y,
                                 imu_msg->angular_velocity.z,
-                                getSec(imu_msg->header.stamp));
+                                static_cast<rclcpp::Time>(imu_msg->header.stamp).seconds());
     mImuMeas.emplace_back(point);
 }
 
@@ -136,54 +129,42 @@ void SlamNode::publishCloudMap()
     sensor_msgs::msg::PointCloud2 cloud_map_msg;
     pcl::toROSMsg(*cloud_map, cloud_map_msg);
     cloud_map_msg.header.stamp = this->now();
-    cloud_map_msg.header.frame_id = "cloud_map";
+    cloud_map_msg.header.frame_id = "world";
     mCloudMapPub->publish(cloud_map_msg);
 }
 
 void SlamNode::publishNavMsgs()
 {
     Eigen::Matrix4f matrix_cw = mTcw.matrix().inverse();
-    Eigen::Matrix4f matrix_cw_temp = matrix_cw;
-    matrix_cw(0, 3) = matrix_cw_temp(2, 3) * 2;
-    matrix_cw(1, 3) = -matrix_cw_temp(0, 3) * 2;
-    matrix_cw(2, 3) = -matrix_cw_temp(1, 3) * 2;
-    Eigen::Matrix3f rotation = matrix_cw_temp.topLeftCorner(3, 3);
-    Eigen::Vector3f euler_angles = rotation.eulerAngles(2, 1, 0);
-    Eigen::Vector3f euler_angles_temp = euler_angles;
-    euler_angles(0) = euler_angles_temp(2);
-    euler_angles(1) = -euler_angles_temp(0);
-    euler_angles(2) = -euler_angles_temp(1);
-
-    Eigen::AngleAxisf rotation_x(euler_angles[0], Eigen::Vector3f::UnitX());
-    Eigen::AngleAxisf rotation_y(euler_angles[1], Eigen::Vector3f::UnitY());
-    Eigen::AngleAxisf rotation_z(euler_angles[2], Eigen::Vector3f::UnitZ());
-    Eigen::Matrix3f rotation_matrix = (rotation_z * rotation_y * rotation_x).matrix();
-    Eigen::Quaternion<float> quaternion_wc(rotation_matrix);
-    quaternion_wc.normalize();
+    Eigen::Matrix3f temp_R = matrix_cw(Eigen::seq(0, 2), Eigen::seq(0, 2));
+    Eigen::Quaternion<float> quaternion_cw(temp_R);
+    quaternion_cw.normalize();
 
     nav_msgs::msg::Odometry odom_msg;
-    odom_msg.header.frame_id = "cloud_map";
+    odom_msg.header.frame_id = "world";
     odom_msg.child_frame_id = "odom";
     odom_msg.header.stamp = this->now();
-    odom_msg.pose.pose.position.x = matrix_cw(0, 3);
-    odom_msg.pose.pose.position.y = matrix_cw(1, 3);
-    odom_msg.pose.pose.position.z = matrix_cw(2, 3);
-    odom_msg.pose.pose.orientation.x = quaternion_wc.x();
-    odom_msg.pose.pose.orientation.y = quaternion_wc.y();
-    odom_msg.pose.pose.orientation.z = quaternion_wc.z();
-    odom_msg.pose.pose.orientation.w = quaternion_wc.w();
+    odom_msg.pose.pose.position.x = matrix_cw(2, 3);
+    odom_msg.pose.pose.position.y = -matrix_cw(0, 3);
+    odom_msg.pose.pose.position.z = -matrix_cw(1, 3);
+    odom_msg.pose.pose.orientation.x = quaternion_cw.z();
+    odom_msg.pose.pose.orientation.y = -quaternion_cw.x();
+    odom_msg.pose.pose.orientation.z = -quaternion_cw.y();
+    odom_msg.pose.pose.orientation.w = quaternion_cw.w();
     mOdomPub->publish(odom_msg);
 
     geometry_msgs::msg::PoseStamped pose_msg;
     pose_msg.header = odom_msg.header;
     pose_msg.pose = odom_msg.pose.pose;
     mPathMsg.header.stamp = odom_msg.header.stamp;
-    mPathMsg.header.frame_id = "cloud_map";
-    mPathMsg.poses.push_back(pose_msg);
+    if (pose_msg.pose != mPathMsg.poses.back().pose)
+    {
+        mPathMsg.poses.push_back(pose_msg);
+    }
     mPathPub->publish(mPathMsg);
 
     geometry_msgs::msg::TransformStamped tf_msg;
-    tf_msg.header.frame_id = "cloud_map";
+    tf_msg.header.frame_id = "world";
     tf_msg.child_frame_id = "odom";
     tf_msg.header.stamp = odom_msg.header.stamp;
     tf_msg.transform.translation.x = odom_msg.pose.pose.position.x;

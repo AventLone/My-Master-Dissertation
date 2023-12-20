@@ -7,7 +7,7 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    package_name = "track_cart_description"
+    package_name = "robot_description"
     urdf_name = "track_cart.urdf"
 
     pkg_share = FindPackageShare(package=package_name).find(package_name)
@@ -16,21 +16,20 @@ def generate_launch_description():
 
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
-        executable="robot_state_publisher",
-        arguments=[urdf_model_path]
+        executable="robot_state_publisher", emulate_tty=True,
+        arguments=[urdf_model_path, '--ros-args', '--log-level', 'warn']
     )
 
     joint_state_publisher_node = Node(
         package="joint_state_publisher",
-        executable="joint_state_publisher",
-        name="joint_state_publisher",
-        arguments=[urdf_model_path]
+        executable="joint_state_publisher", emulate_tty=True,
+        arguments=[urdf_model_path, '--ros-args', '--log-level', 'warn']
     )
 
-    # "screen", "log" or "both"
+    # "screen", "log"
     rviz2_node = Node(
-        package="rviz2", executable="rviz2", output="screen",
-        arguments=["-d", rviz_config_path]
+        package="rviz2", executable="rviz2", output="screen", emulate_tty=True,
+        arguments=["-d", rviz_config_path, '--ros-args', '--log-level', 'warn']
     )
 
     ld = LaunchDescription()

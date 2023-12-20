@@ -23,7 +23,7 @@ Camera1.p2: 0.0
 Camera.width: 640
 Camera.height: 480
 
-# Camera frames per second 
+# Camera frames per second
 Camera.fps: 30
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
@@ -40,20 +40,28 @@ IMU.T_b_c1:
   rows: 4
   cols: 4
   dt: f
+  # data: [0.999903, -0.0138036, -0.00208099, -0.0202141,
+  #        0.0137985, 0.999902,  -0.00243498,  0.00505961,
+  #        0.0021144, 0.00240603, 0.999995,    0.0114047,
+  #        0.0,       0.0,        0.0,         1.0]
   data: [1.0, 0.0, 0.0, 0.0,
          0.0, 1.0, 0.0, 0.0,
          0.0, 0.0, 1.0, 0.0,
          0.0, 0.0, 0.0, 1.0]
 
-
 # Do not insert KFs when recently lost
 IMU.InsertKFsWhenLost: 0
 
 # IMU noise (Use those from VINS-mono)
-IMU.NoiseGyro: 1e-2 # 3 # 2.44e-4 #1e-3 # rad/s^0.5
-IMU.NoiseAcc: 1e-1 #2 # 1.47e-3 #1e-2 # m/s^1.5
-IMU.GyroWalk: 1e-6 # rad/s^1.5
-IMU.AccWalk: 1e-4 # m/s^2.5
+# IMU.NoiseGyro: 1e-2 # 3 # 2.44e-4 #1e-3 # rad/s^0.5
+# IMU.NoiseAcc: 1e-1 #2 # 1.47e-3 #1e-2 # m/s^1.5
+# IMU.GyroWalk: 1e-6 # rad/s^1.5
+# IMU.AccWalk: 1e-4 # m/s^2.5
+# IMU.Frequency: 200.0
+IMU.NoiseGyro: 0.0 # 3 # 2.44e-4 #1e-3 # rad/s^0.5
+IMU.NoiseAcc: 0.0 #2 # 1.47e-3 #1e-2 # m/s^1.5
+IMU.GyroWalk: 0.0 # rad/s^1.5
+IMU.AccWalk: 0.0 # m/s^2.5
 IMU.Frequency: 200.0
 
 #--------------------------------------------------------------------------------------------
@@ -92,7 +100,7 @@ Viewer.ViewpointF: 500.0
 #--------------------------------------------------------------------------------------------
 # Map Parameters
 #--------------------------------------------------------------------------------------------
-MapResolution.PointCloud: 0.08
+MapResolution.PointCloud: 0.1
 # UseSegmenter: True
 
 #--------------------------------------------------------------------------------------------

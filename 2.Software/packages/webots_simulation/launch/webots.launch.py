@@ -1,5 +1,5 @@
 import os
-import launch
+# import launch
 from launch import LaunchDescription
 from launch.actions import TimerAction
 from launch.event_handlers import OnProcessExit
@@ -12,7 +12,7 @@ def generate_launch_description():
     this_pkg = FindPackageShare(package='webots_simulation').find('webots_simulation')
     robot_description_path = os.path.join(this_pkg, 'urdf', 'robot.urdf')
 
-    webots = WebotsLauncher(world=os.path.join(this_pkg, 'worlds', 'wild_environment.wbt'))
+    webots = WebotsLauncher(world=os.path.join(this_pkg, 'worlds', 'wild_with_grass.wbt'))
 
     my_robot_driver = WebotsController(
         robot_name='BD_Roamer',

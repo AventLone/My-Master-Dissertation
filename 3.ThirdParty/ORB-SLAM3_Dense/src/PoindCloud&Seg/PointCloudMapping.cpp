@@ -64,12 +64,12 @@ void PointCloudMapping::generatePointCloud(KeyFrame* kf)
 {
     PointCloud::Ptr point_cloud(new PointCloud);
     PointT point;
-    for (int v = 0; v < kf->imgDepth.rows; v += 6)
+    for (int v = 0; v < kf->imgDepth.rows; v += 9)
     {
-        for (int u = 0; u < kf->imgDepth.cols; u += 6)
+        for (int u = 0; u < kf->imgDepth.cols; u += 9)
         {
-            auto d = kf->imgDepth.ptr<unsigned short>(v)[u];
-            if (d < 100 || d > 8000) continue;   // Remove abnormal points
+            auto d = kf->imgDepth.ptr<uint16_t>(v)[u];
+            if (d < 10 || d > 10000) continue;   // Remove abnormal points
 
             point.z = static_cast<float>(d) / 1000.0f;
             point.x = (u - kf->cx) * point.z / kf->fx;
