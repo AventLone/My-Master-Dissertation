@@ -8,6 +8,8 @@ from launch.actions import TimerAction
 
 
 def generate_launch_description():
+    gpr_pkg = FindPackageShare(package="gpr").find("gpr")
+    urdf_path = os.path.join(gpr_pkg, "config/hyperparam.txt")
 
     waypoint_generator_node = Node(
         package="waypoint_generating", executable="waypoint_generator", output="screen", emulate_tty=True,
@@ -19,7 +21,8 @@ def generate_launch_description():
     )
     gpr_node = Node(
         package="gpr", executable="gpr_path", output="screen", emulate_tty=True,
-        arguments=['--ros-args', '--log-level', 'info']
+        arguments=['--ros-args', '--log-level', 'info'],
+        parameters=[{"ConfigFilePath", urdf_path}]
     )
     local_planning_node = Node(
         package="local_planning", executable="local_planner", output="screen", emulate_tty=True,

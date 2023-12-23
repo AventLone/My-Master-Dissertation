@@ -12,17 +12,17 @@ GprPath::GprPath(const std::string& name) : Node(name)
                                                rclcpp::ParametersQoS().reliable(),
                                                std::bind(&GprPath::pathCallBack, this, std::placeholders::_1));
 
-    mSurfacePredictPub = create_publisher<MultiArray>("putn/surface_prediction", rclcpp::ServicesQoS().reliable());
+    mSurfacePredictPub = create_publisher<MultiArray>("putn/gpr/surface_prediction", rclcpp::ServicesQoS().reliable());
 }
 
-void GprPath::treeCallBack(const MultiArray::ConstPtr& msg)
+void GprPath::treeCallBack(const MultiArray::ConstSharedPtr& msg)
 {
-    double duration;
-    clock_t start, end;
-    start = std::clock();
-    RCLCPP_INFO(get_logger(), "Receive the tree.");
+    // double duration;
+    // clock_t start, end;
+    // start = std::clock();
+    // RCLCPP_INFO(get_logger(), "Receive the tree.");
 
-    if (msg->data.size() == 0) return;
+    if (msg->data.empty()) return;
 
     int num = static_cast<int>(msg->data.size() / 4);
     for (int i = 0; i < num; i++)
@@ -78,16 +78,16 @@ void GprPath::treeCallBack(const MultiArray::ConstPtr& msg)
     mTestInputs.clear();
     mTestOutputs.clear();
 
-    end = std::clock();
-    duration = static_cast<double>(end - start);
+    // end = std::clock();
+    // duration = static_cast<double>(end - start);
 
-    RCLCPP_INFO(get_logger(), "Time consume : %f ms", duration / 1000.0);
+    // RCLCPP_INFO(get_logger(), "Time consume : %f ms", duration / 1000.0);
 }
 
-void GprPath::pathCallBack(const MultiArray::ConstPtr& msg)
+void GprPath::pathCallBack(const MultiArray::ConstSharedPtr& msg)
 {
-    RCLCPP_INFO(get_logger(), "Received the path.");
-    if (msg->data.size() == 0) return;
+    // RCLCPP_INFO(get_logger(), "Received the path.");
+    if (msg->data.empty()) return;
 
     int num = static_cast<int>(msg->data.size() / 3);
     for (int i = 0; i < num; ++i)

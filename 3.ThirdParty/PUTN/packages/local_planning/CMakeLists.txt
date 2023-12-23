@@ -18,6 +18,7 @@ set(DEPENDENT_PACKAGIES
     geometry_msgs
     nav_msgs
     visualization_msgs
+    tf2_ros
 )
 find_package(ament_cmake REQUIRED)
 

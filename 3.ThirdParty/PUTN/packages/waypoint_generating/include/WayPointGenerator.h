@@ -12,27 +12,12 @@
 #include <boost/format.hpp>
 #include <Eigen/Dense>
 
-// using namespace std;
 using bfmt = boost::format;
 
 class WayPointGenerator : public rclcpp::Node
 {
-    // waypoint type
-    enum WayPointType : char
-    {
-        FREE,
-        CIRCLE,
-        EIGHT,
-        POINT,
-        SERIES,
-        MANUAL,
-    };
-
 public:
     WayPointGenerator(const std::string& name);
-
-    std::unordered_map<std::string, WayPointType> mWayPointTypeDict{
-        {"free", FREE}, {"circle", CIRCLE}, {"eight", EIGHT}, {"point", POINT}, {"series", SERIES}, {"manual", MANUAL}};
 
 private:
     bool mIsOdomReady;

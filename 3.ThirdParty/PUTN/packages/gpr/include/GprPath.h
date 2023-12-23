@@ -43,6 +43,6 @@ private:
     rclcpp::Publisher<MultiArray>::SharedPtr mSurfacePredictPub;
 
 private:
-    void treeCallBack(const MultiArray::ConstPtr& msg);
-    void pathCallBack(const MultiArray::ConstPtr& msg);
+    void treeCallBack(const MultiArray::ConstSharedPtr& msg);
+    void pathCallBack(const MultiArray::ConstSharedPtr& msg);
 };

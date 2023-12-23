@@ -16,16 +16,17 @@ LocalPlanner::LocalPlanner(const std::string& name) : rclcpp::Node(name)
         rclcpp::SensorDataQoS().reliable(),
         std::bind(&LocalPlanner::obstacleCallback, this, std::placeholders::_1));
     mGoalPathSub = create_subscription<std_msgs::msg::Float32MultiArray>(
-        "surf_predict_pub",
+        // "surf_predict_pub",
+        "putn/gpr/surface_prediction",
         rclcpp::SensorDataQoS().reliable(),
         std::bind(&LocalPlanner::globalPathCallback, this, std::placeholders::_1));
 
     /* Initiate Publishers */
     mObstaclePub = create_publisher<visualization_msgs::msg::MarkerArray>("draw_obstacles",
                                                                           rclcpp::SystemDefaultsQoS().reliable());
-    mLocalPathPub = create_publisher<nav_msgs::msg::Path>("local_path", rclcpp::ParametersQoS().reliable());
+    mLocalPathPub = create_publisher<nav_msgs::msg::Path>("putn/local_path", rclcpp::ParametersQoS().reliable());
     mLocalPlanPub =
-        create_publisher<std_msgs::msg::Float32MultiArray>("local_plan", rclcpp::ParametersQoS().reliable());
+        create_publisher<std_msgs::msg::Float32MultiArray>("putn/local_plan", rclcpp::ParametersQoS().reliable());
 
     /* Initiate Timer */
     mTimer =

@@ -31,9 +31,22 @@ void RobotDriver::init(webots_ros2_driver::WebotsNode* node, std::unordered_map<
 
     /* Frequency: 200 Hz */
     mTimer = mNode->create_wall_timer(std::chrono::milliseconds(5), std::bind(&RobotDriver::publishImu, this));
+
+    // auto f = [this]() -> void
+    // {
+    //     auto pub = mNode->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::ServicesQoS().reliable());
+    //     std::this_thread::sleep_for(std::chrono::seconds(1));
+    //     geometry_msgs::msg::Twist msg;
+    //     msg.angular.z = M_PI / 2.0;
+    //     pub->publish(msg);
+    //     std::this_thread::sleep_for(std::chrono::seconds(4));
+    //     msg.angular.z = 0.0;
+    //     pub->publish(msg);
+    // };
+    // mThread = std::thread(f);
 }
 
-void RobotDriver::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg)
+void RobotDriver::cmdVelCallback(const geometry_msgs::msg::Twist::ConstSharedPtr& msg)
 {
     mCmdVelMsg.linear = msg->linear;
     mCmdVelMsg.angular = msg->angular;
@@ -50,7 +63,7 @@ void RobotDriver::publishImu()
     mImuMsg.linear_acceleration.x = accele[0];
     mImuMsg.linear_acceleration.y = accele[1];
     mImuMsg.linear_acceleration.z = accele[2];
-    mImuMsg.header.stamp = mNode->now();
+    mImuMsg.header.stamp = rclcpp::Clock().now();
     mImuPub->publish(mImuMsg);
 }
 
@@ -62,7 +75,14 @@ void RobotDriver::step()
     auto command_motor_left = (linear_speed - angular_speed * mHalfDistanceBetweenWheels) / mWheelRadius;
     auto command_motor_right = (linear_speed + angular_speed * mHalfDistanceBetweenWheels) / mWheelRadius;
 
-    mLeftMotor->setVelocity(command_motor_left);
+
+    // auto command_motor_left = -mCmdVelMsg.linear.x;
+    // auto command_motor_right = mCmdVelMsg.linear.x;
+
+    // auto command_motor_left = linear_speed - 4.98755 * angular_speed;
+    // auto command_motor_right = linear_speed + 4.98755 * angular_speed;
+
+    mLeftMotor->setVelocity(command_motor_left);   // set angular velocity
     mRightMotor->setVelocity(command_motor_right);
 }
 

@@ -12,6 +12,7 @@ def generate_launch_description():
     this_pkg = FindPackageShare(package='webots_simulation').find('webots_simulation')
     robot_description_path = os.path.join(this_pkg, 'urdf', 'robot.urdf')
 
+    # webots = WebotsLauncher(world=os.path.join(this_pkg, 'worlds', 'indoor.wbt'))
     webots = WebotsLauncher(world=os.path.join(this_pkg, 'worlds', 'wild_with_grass.wbt'))
 
     my_robot_driver = WebotsController(

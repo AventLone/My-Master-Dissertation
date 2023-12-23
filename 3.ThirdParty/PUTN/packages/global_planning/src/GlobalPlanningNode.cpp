@@ -52,25 +52,26 @@ GlobalPlanningNode::GlobalPlanningNode(const std::string& name) : rclcpp::Node(n
         rclcpp::SensorDataQoS().best_effort(),
         std::bind(&GlobalPlanningNode::cloudMapCallback, this, std::placeholders::_1));
     mWayPointSub = create_subscription<nav_msgs::msg::Path>(
-        "waypoints",
+        "putn/waypoints",
         rclcpp::SensorDataQoS().reliable(),
         std::bind(&GlobalPlanningNode::waypointsCallback, this, std::placeholders::_1));
 
     /* Initiate Publisher */
-    mGridMapVisualizePub =
-        create_publisher<sensor_msgs::msg::PointCloud2>("grid_map_vis", rclcpp::SensorDataQoS().best_effort());
-    mPathVisualizePub =
-        create_publisher<visualization_msgs::msg::Marker>("path_vis", rclcpp::SensorDataQoS().best_effort());
-    mGoalVisualizePub =
-        create_publisher<visualization_msgs::msg::Marker>("goal_vis", rclcpp::SensorDataQoS().best_effort());
-    mPlaneVisualizePub =
-        create_publisher<sensor_msgs::msg::PointCloud2>("surf_vis", rclcpp::SensorDataQoS().best_effort());
-    mTreeVisualizePub =
-        create_publisher<visualization_msgs::msg::Marker>("tree_vis", rclcpp::SensorDataQoS().best_effort());
+    mGridMapVisualizePub = create_publisher<sensor_msgs::msg::PointCloud2>("putn/global_planning/grid_map_vis",
+                                                                           rclcpp::SensorDataQoS().best_effort());
+    mPathVisualizePub = create_publisher<visualization_msgs::msg::Marker>("putn/global_planning/path_vis",
+                                                                          rclcpp::SensorDataQoS().best_effort());
+    mGoalVisualizePub = create_publisher<visualization_msgs::msg::Marker>("putn/global_planning/goal_vis",
+                                                                          rclcpp::SensorDataQoS().best_effort());
+    mPlaneVisualizePub = create_publisher<sensor_msgs::msg::PointCloud2>("putn/global_planning/surf_vis",
+                                                                         rclcpp::SensorDataQoS().best_effort());
+    mTreeVisualizePub = create_publisher<visualization_msgs::msg::Marker>("putn/global_planning/tree_vis",
+                                                                          rclcpp::SensorDataQoS().best_effort());
 
-    mTreeTraPub = create_publisher<std_msgs::msg::Float32MultiArray>("tree_tra", rclcpp::ServicesQoS().reliable());
-    mGlobalPathPub =
-        create_publisher<std_msgs::msg::Float32MultiArray>("global_path", rclcpp::ServicesQoS().reliable());
+    mTreeTraPub = create_publisher<std_msgs::msg::Float32MultiArray>("putn/global_planning/tree_tra",
+                                                                     rclcpp::ServicesQoS().reliable());
+    mGlobalPathPub = create_publisher<std_msgs::msg::Float32MultiArray>("putn/global_planning/global_path",
+                                                                        rclcpp::ServicesQoS().reliable());
 }
 
 void GlobalPlanningNode::waypointsCallback(const nav_msgs::msg::Path::ConstSharedPtr& wp)
@@ -126,8 +127,8 @@ void GlobalPlanningNode::pubGlobalPath(const std::vector<putn::Node::Ptr>& solut
 
 void GlobalPlanningNode::findSolution()
 {
-    std::printf("=========================================================================\n");
-    RCLCPP_INFO(get_logger(), "Start calling PF-RRT*");
+    // std::printf("=========================================================================\n");
+    // RCLCPP_INFO(get_logger(), "Start calling PF-RRT*");
     putn::Path solution = putn::Path();
 
     mPFRRTStar->initWithGoal(mStartPoint, mTargetPoint);
@@ -135,14 +136,14 @@ void GlobalPlanningNode::findSolution()
     /* Case 1: The PF-RRT* can't work at when the origin can't be projected to surface. */
     if (mPFRRTStar->state() == putn::planner::Invalid)
     {
-        RCLCPP_WARN(get_logger(), "The start point can't be projected. Unable to start PF-RRT* algorithm!!!");
+        // RCLCPP_WARN(get_logger(), "The start point can't be projected. Unable to start PF-RRT* algorithm!!!");
     }
 
     /* Case 2: If both the origin and the target can be projected,the PF-RRT* will
        execute global planning and try to generate a path. */
     else if (mPFRRTStar->state() == putn::Path::Global)
     {
-        RCLCPP_INFO(get_logger(), "Starting PF-RRT* algorithm at the state of global planning.");
+        // RCLCPP_INFO(get_logger(), "Starting PF-RRT* algorithm at the state of global planning.");
         int max_iter = 5000;
         double max_time = 100.0;
 
@@ -166,7 +167,7 @@ void GlobalPlanningNode::findSolution()
        the PF-RRT* will try to find a temporary target for transitions. */
     else
     {
-        RCLCPP_INFO(get_logger(), "Starting PF-RRT* algorithm at the state of rolling planning.");
+        // RCLCPP_INFO(get_logger(), "Starting PF-RRT* algorithm at the state of rolling planning.");
         int max_iter = 1500;
         double max_time = 100.0;
 
@@ -181,8 +182,8 @@ void GlobalPlanningNode::findSolution()
             RCLCPP_WARN(get_logger(), "No solution found!");
         }
     }
-    RCLCPP_INFO(get_logger(), "End calling PF-RRT*.");
-    std::printf("=========================================================================\n");
+    // RCLCPP_INFO(get_logger(), "End calling PF-RRT*.");
+    // std::printf("=========================================================================\n");
 
     pubGlobalPath(solution.nodes);
     visualizePath(solution.nodes);
@@ -194,8 +195,8 @@ void GlobalPlanningNode::findSolution()
         putn::EuclideanDistance(mPFRRTStar->origin(), mPFRRTStar->target()) < mGoalThre)
     {
         mHasGoal = false;
-        visualizeOriginAndGoal({});   // Passing an empty set to delete the previous display
-        visualizePath({});
+        // visualizeOriginAndGoal({});   // Passing an empty set to delete the previous display
+        // visualizePath({});
         RCLCPP_INFO(get_logger(), "The robot has achieved the goal!!");
     }
 
@@ -220,7 +221,7 @@ void GlobalPlanningNode::callPlanner()
             int max_iter = 550;
             double max_time = 100.0;
             mPFRRTStar->planner(max_iter, max_time);
-            RCLCPP_INFO(get_logger(), "Current size of tree: %d", static_cast<int>(mPFRRTStar->tree().size()));
+            // RCLCPP_INFO(get_logger(), "Current size of tree: %d", static_cast<int>(mPFRRTStar->tree().size()));
         }
         else
         {
@@ -229,6 +230,7 @@ void GlobalPlanningNode::callPlanner()
     }
     else if (mHasGoal)   // If there is a specified moving target, call PF-RRT* to find a solution.
     {
+        RCLCPP_INFO(get_logger(), "Goal received.");
         findSolution();
         init_time_cost = 0.0;
     }

@@ -19,6 +19,7 @@ set(DEPENDENT_PACKAGIES
     nav_msgs
     visualization_msgs
     tf2_ros
+    tf2_geometry_msgs
     pcl_conversions
 )
 
@@ -34,6 +35,8 @@ endforeach()
 find_package(PCL REQUIRED)
 set(DEPENDENT_LIBS
     ${PCL_LIBRARIES}
+    -lstdc++
+    -lgfortran
 )
 
 # Find all source files

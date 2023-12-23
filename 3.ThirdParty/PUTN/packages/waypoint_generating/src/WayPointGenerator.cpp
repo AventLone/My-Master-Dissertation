@@ -5,12 +5,16 @@
 
 WayPointGenerator::WayPointGenerator(const std::string& name) : rclcpp::Node(name)
 {
+    declare_parameter("waypoint_type", "manual-lonely-waypoint");
+    get_parameter("waypoint_type", waypoint_type);
+
     mOdomSub = create_subscription<nav_msgs::msg::Odometry>(
         "orb_slam3/odom",
         rclcpp::ServicesQoS().reliable(),
         std::bind(&WayPointGenerator::odomCallback, this, std::placeholders::_1));
     mGoalSub = create_subscription<geometry_msgs::msg::PoseStamped>(
-        "goal",
+        // "goal",
+        "goal_pose",
         rclcpp::ServicesQoS().reliable(),
         std::bind(&WayPointGenerator::goalCallback, this, std::placeholders::_1));
     mTrajStartTriggerSub = create_subscription<geometry_msgs::msg::PoseStamped>(
@@ -18,9 +22,9 @@ WayPointGenerator::WayPointGenerator(const std::string& name) : rclcpp::Node(nam
         rclcpp::ServicesQoS().reliable(),
         std::bind(&WayPointGenerator::trajStartTriggerCallback, this, std::placeholders::_1));
 
-    mWayPointsPub = create_publisher<nav_msgs::msg::Path>("waypoints", rclcpp::ServicesQoS().reliable());
+    mWayPointsPub = create_publisher<nav_msgs::msg::Path>("putn/waypoints", rclcpp::ServicesQoS().reliable());
     mWayPointsVisPub =
-        create_publisher<geometry_msgs::msg::PoseArray>("waypoints_vis", rclcpp::ServicesQoS().reliable());
+        create_publisher<geometry_msgs::msg::PoseArray>("putn/waypoints_vis", rclcpp::ServicesQoS().best_effort());
 }
 
 void WayPointGenerator::loadSeg(int seg_id, const rclcpp::Time& time_base)
@@ -98,7 +102,6 @@ void WayPointGenerator::pubWayPoints()
     init_pose.header = mOdom.header;
     init_pose.pose = mOdom.pose.pose;
     mWayPoints.poses.insert(mWayPoints.poses.begin(), init_pose);
-    // pub2.publish(waypoints);
     mWayPointsPub->publish(mWayPoints);
     mWayPoints.poses.clear();
 }
@@ -132,7 +135,7 @@ void WayPointGenerator::odomCallback(const nav_msgs::msg::Odometry::ConstSharedP
     {
         rclcpp::Time expected_time = waypointSegments.front().header.stamp;
 
-        if (static_cast<rclcpp::Time>(mOdom.header.stamp) >= expected_time)
+        if (static_cast<rclcpp::Time>(mOdom.header.stamp).seconds() >= expected_time.seconds())
         {
             mWayPoints = waypointSegments.front();
 
@@ -157,7 +160,7 @@ void WayPointGenerator::odomCallback(const nav_msgs::msg::Odometry::ConstSharedP
 void WayPointGenerator::goalCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg)
 {
     mTriggedTime = this->now();   // odom.header.stamp;
-    rcpputils::assert_true(mTriggedTime > rclcpp::Time(0, 0));
+    // rcpputils::assert_true(mTriggedTime > rclcpp::Time(0, 0));
 
     // n.param("waypoint_type", waypoint_type, "manual");
     get_parameter("waypoint_type", waypoint_type);
@@ -252,7 +255,8 @@ void WayPointGenerator::trajStartTriggerCallback(const geometry_msgs::msg::PoseS
     RCLCPP_WARN(get_logger(), "Trigger!");
     mTriggedTime = mOdom.header.stamp;
 
-    rcpputils::assert_true(mTriggedTime > rclcpp::Time(0, 0));
+    // rcpputils::assert_true(mTriggedTime > rclcpp::Time(0, 0));
+    rcpputils::assert_true(mTriggedTime.seconds() > 0.0);
 
     // ros::NodeHandle n("~");
     // n.param("waypoint_type", waypoint_type, string("manual"));

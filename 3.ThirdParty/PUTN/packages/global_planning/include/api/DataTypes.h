@@ -183,15 +183,15 @@ struct World
 
     /**
      * @brief Check if there is any obstacle between 2 nodes.
-     * @param Node* node_start
-     * @param Node* node_end
+     * @param node_start
+     * @param node_end
      * @return bool true(no obstacle exists),false(exist obstacle)
      */
     bool collisionFree(const Node::ConstPtr& node_start, const Node::ConstPtr& node_end);
 
     /**
      * @brief Check whether the given point is within the range of the grid map
-     * @param Eigen::Vector3i(the index value obtained after discretization of the given point)
+     * @param index the index value obtained after discretization of the given point
      * @return bool true(within range),false（out of range)
      */
     bool isInsideBorder(const Eigen::Vector3i& index)

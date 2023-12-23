@@ -28,8 +28,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation -0.20777227091512585 0.8049760968747187 0.55573749819417 0.8264614077625971
-  position -3.8329259498326707 -2.8109204001564185 2.6920277056396804
+  orientation -0.03784978058589079 0.9981138277156224 0.04833405665231196 1.052099592424817
+  position -6.723949976735525 -0.5322715972288555 12.113187974722534
   follow "BD_Roamer"
 }
 RectangleArena {
@@ -89,7 +89,7 @@ DEF Room Group {
       rotation 0 0 1 1.5708
     }
     Bed {
-      translation 2.51 0 0
+      translation 3.02 -2.16 0
     }
     BathroomSink {
       translation -0.91 2.46 0.51
@@ -99,17 +99,16 @@ DEF Room Group {
       translation 0.51 -2.36 0
     }
     Radiator {
-      translation 0 2.92 0.3
+      translation 0 3.56 0.3
     }
     Door {
-      translation 0 0.69 0
+      translation 0 2.05 0
       position -0.00014940745248626954
     }
   ]
 }
 DEF BD-Roamer Robot {
-  translation -1.27823 -1.84627 0.0743953
-  rotation -0.0014958792967629424 0.0016439492271528725 -0.9999975298849834 -1.4771953071795858
+  translation 0 0 0.0743953
   children [
     DEF DepthCamera Group {
       children [

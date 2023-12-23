@@ -6,14 +6,23 @@
 #include <geometry_msgs/msg/inertia_stamped.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 
+#define VIRTUAL_DISTANCE 9.9751
 
 class RobotDriver : public webots_ros2_driver::PluginInterface
 {
 public:
     void step() override;
     void init(webots_ros2_driver::WebotsNode* node, std::unordered_map<std::string, std::string>& parameters) override;
+    ~RobotDriver()
+    {
+        if (mThread.joinable())
+        {
+            mThread.join();
+        }
+    }
 
 private:
+    std::thread mThread;
     /* Parameters */
     const double mHalfDistanceBetweenWheels{0.045}, mWheelRadius{1.0};
     const int mTimeStep{1};
@@ -40,5 +49,5 @@ private:
     rclcpp::TimerBase::SharedPtr mTimer;
 
     void publishImu();
-    void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg);
+    void cmdVelCallback(const geometry_msgs::msg::Twist::ConstSharedPtr& msg);
 };
