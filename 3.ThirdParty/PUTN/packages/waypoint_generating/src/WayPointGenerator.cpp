@@ -191,11 +191,12 @@ void WayPointGenerator::goalCallback(const geometry_msgs::msg::PoseStamped::Cons
     {
         std::cout << "recieve_x:  " << msg->pose.position.x << std::endl;
         std::cout << "recieve_y:  " << msg->pose.position.y << std::endl;
-        std::cout << "recieve_z:  " << msg->pose.position.z << std::endl;
+        std::cout << "recieve_z:  " << msg->pose.position.z + 0.1 << std::endl;
         if (msg->pose.position.z >= 0)
         {
             // if height >= 0, it's a valid goal;
             geometry_msgs::msg::PoseStamped pt = *msg;
+            // pt.pose.position.z = 0.1;   // test
             mWayPoints.poses.clear();
             mWayPoints.poses.push_back(pt);
             pubWayPointsVis();

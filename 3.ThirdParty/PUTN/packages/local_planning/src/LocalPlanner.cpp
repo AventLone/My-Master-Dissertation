@@ -12,18 +12,18 @@ LocalPlanner::LocalPlanner(const std::string& name) : rclcpp::Node(name)
         rclcpp::SensorDataQoS().reliable(),
         std::bind(&LocalPlanner::currStateCallback, this, std::placeholders::_1));
     mObstacleSub = create_subscription<std_msgs::msg::Float32MultiArray>(
-        "obstacle",
+        "putn/obstacle",
         rclcpp::SensorDataQoS().reliable(),
         std::bind(&LocalPlanner::obstacleCallback, this, std::placeholders::_1));
     mGoalPathSub = create_subscription<std_msgs::msg::Float32MultiArray>(
-        // "surf_predict_pub",
-        "putn/gpr/surface_prediction",
+        // "putn/gpr/surface_prediction",
+        "putn/global_planning/global_path",
         rclcpp::SensorDataQoS().reliable(),
         std::bind(&LocalPlanner::globalPathCallback, this, std::placeholders::_1));
 
     /* Initiate Publishers */
     mObstaclePub = create_publisher<visualization_msgs::msg::MarkerArray>("draw_obstacles",
-                                                                          rclcpp::SystemDefaultsQoS().reliable());
+                                                                          rclcpp::SystemDefaultsQoS().best_effort());
     mLocalPathPub = create_publisher<nav_msgs::msg::Path>("putn/local_path", rclcpp::ParametersQoS().reliable());
     mLocalPlanPub =
         create_publisher<std_msgs::msg::Float32MultiArray>("putn/local_plan", rclcpp::ParametersQoS().reliable());
@@ -179,16 +179,16 @@ void LocalPlanner::replanCallback()
         }
         mHavePlan = true;
     }
-    else if (!mRobotStateSet && mRefPathSet)
-    {
-        RCLCPP_WARN(get_logger(), "No pose.");
-    }
-    else if (mRobotStateSet && !mRefPathSet)
-    {
-        RCLCPP_WARN(get_logger(), "No path.");
-    }
-    else
-    {
-        RCLCPP_WARN(get_logger(), "No pose and no path.");
-    }
+    // else if (!mRobotStateSet && mRefPathSet)
+    // {
+    //     RCLCPP_WARN(get_logger(), "No pose.");
+    // }
+    // else if (mRobotStateSet && !mRefPathSet)
+    // {
+    //     RCLCPP_WARN(get_logger(), "No path.");
+    // }
+    // else
+    // {
+    //     RCLCPP_WARN(get_logger(), "No pose and no path.");
+    // }
 }

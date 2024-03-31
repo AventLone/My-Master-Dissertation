@@ -1,6 +1,9 @@
 #include "GlobalPlanningNode.h"
 #include <visualization_msgs/msg/marker.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <octomap/octomap.h>
+#include <octomap_msgs/conversions.h>
+
 
 /**
  * @brief Make frame to show pose and shape
@@ -8,11 +11,51 @@
 std::vector<Eigen::Vector4d> generateFrame(const std::vector<Eigen::Vector3d>& pts, const std::vector<float>& color_pts,
                                            const std::vector<Eigen::Quaterniond>& orientations);
 
+/* Convert grid map to point cloud */
+// void GlobalPlanningNode::visualizeWorld()
+// {
+//     if (!mWorld->exist_map) return;
+
+//     pcl::PointCloud<pcl::PointXYZ> cloud_vis;
+//     for (int i = 0; i < mWorld->index_count(0); i++)
+//     {
+//         for (int j = 0; j < mWorld->index_count(1); j++)
+//         {
+//             for (int k = 0; k < mWorld->index_count(2); k++)
+//             {
+//                 Eigen::Vector3i index(i, j, k);
+//                 if (!mWorld->grid_map[index(0)][index(1)][index(2)])
+//                 {
+//                     Eigen::Vector3d coor_round = mWorld->index2coord(index);
+//                     pcl::PointXYZ pt_add;
+//                     pt_add.x = coor_round(0);
+//                     pt_add.y = coor_round(1);
+//                     pt_add.z = coor_round(2);
+//                     cloud_vis.points.push_back(pt_add);
+//                 }
+//             }
+//         }
+//     }
+
+//     cloud_vis.width = cloud_vis.points.size();
+//     cloud_vis.height = 1;
+//     cloud_vis.is_dense = true;
+
+//     sensor_msgs::msg::PointCloud2 map_vis;
+//     pcl::toROSMsg(cloud_vis, map_vis);
+
+//     map_vis.header.frame_id = "world";
+//     mGridMapVisualizePub->publish(map_vis);
+// }
+
+/* Convert grid map to OctoMap */
 void GlobalPlanningNode::visualizeWorld()
 {
     if (!mWorld->exist_map) return;
 
-    pcl::PointCloud<pcl::PointXYZ> cloud_vis;
+    octomap::OcTree octo_map(0.05);   // Create a OcTree with resolution 0.1
+    octomap::Pointcloud octo_cloud;
+
     for (int i = 0; i < mWorld->index_count(0); i++)
     {
         for (int j = 0; j < mWorld->index_count(1); j++)
@@ -23,23 +66,26 @@ void GlobalPlanningNode::visualizeWorld()
                 if (!mWorld->grid_map[index(0)][index(1)][index(2)])
                 {
                     Eigen::Vector3d coor_round = mWorld->index2coord(index);
-                    pcl::PointXYZ pt_add;
-                    pt_add.x = coor_round(0);
-                    pt_add.y = coor_round(1);
-                    pt_add.z = coor_round(2);
-                    cloud_vis.points.push_back(pt_add);
+                    // pcl::PointXYZ pt_add;
+                    // octo_map.insertRay(octomap::point3d(0.0, 0.0, 0.0),
+                    //                    octomap::point3d(coor_round(0), coor_round(1), coor_round(3)));
+
+                    octo_cloud.push_back(coor_round(0), coor_round(1), coor_round(2));
+
+                    // pt_add.x = coor_round(0);
+                    // pt_add.y = coor_round(1);
+                    // pt_add.z = coor_round(2);
+                    // cloud_vis.points.push_back(pt_add);
                 }
             }
         }
     }
+    octo_map.insertPointCloud(octo_cloud, octomap::point3d(0.0, 0.0, 0.0));
 
-    cloud_vis.width = cloud_vis.points.size();
-    cloud_vis.height = 1;
-    cloud_vis.is_dense = true;
+    octomap_msgs::msg::Octomap map_vis;
+    octomap_msgs::fullMapToMsg(octo_map, map_vis);
 
-    sensor_msgs::msg::PointCloud2 map_vis;
-    pcl::toROSMsg(cloud_vis, map_vis);
-
+    map_vis.id = "OcTree";
     map_vis.header.frame_id = "world";
     mGridMapVisualizePub->publish(map_vis);
 }
@@ -66,11 +112,11 @@ void GlobalPlanningNode::visualizePlane(const std::vector<putn::Node::Ptr>& solu
     surf_points.height = 1;
     surf_points.is_dense = true;
 
-    sensor_msgs::msg::PointCloud2 map_vis;
-    pcl::toROSMsg(surf_points, map_vis);
+    sensor_msgs::msg::PointCloud2 cloud_msg;
+    pcl::toROSMsg(surf_points, cloud_msg);
 
-    map_vis.header.frame_id = "world";
-    mPlaneVisualizePub->publish(map_vis);
+    cloud_msg.header.frame_id = "world";
+    mPlaneVisualizePub->publish(cloud_msg);
 }
 
 void GlobalPlanningNode::visualizeOriginAndGoal(const std::vector<putn::Node::Ptr>& nodes)
@@ -168,8 +214,7 @@ void GlobalPlanningNode::visualizePath(const std::vector<putn::Node::Ptr>& solut
             Eigen::Quaterniond quaternion(R);
             orientations.push_back(quaternion);
         }
-        // make frame
-        std::vector<Eigen::Vector4d> frame_list = generateFrame(pts, pts_tra, orientations);
+        std::vector<Eigen::Vector4d> frame_list = generateFrame(pts, pts_tra, orientations);   // make frame
         for (const auto& coord : frame_list)
         {
             pt.x = coord(0);
@@ -231,7 +276,7 @@ void GlobalPlanningNode::visualizeTree(const std::vector<putn::Node::Ptr>& tree)
         // Points.colors.push_back(color);
         Points.points.push_back(pt);
 
-        if (node->parent != NULL)   // skip the root node
+        if (node->parent != nullptr)   // skip the root node
         {
             Line.points.push_back(pt);
             parent_pt.x = node->parent->position(0);

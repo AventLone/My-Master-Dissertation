@@ -98,9 +98,11 @@ Viewer.ViewpointZ: -3.5
 Viewer.ViewpointF: 500.0
 
 #--------------------------------------------------------------------------------------------
-# Map Parameters
+# Cloud Map Parameters
 #--------------------------------------------------------------------------------------------
 MapResolution.PointCloud: 0.1
+# CloudMap.Resolution: 0.1
+# CloudMap.Mode: 0          # 0 for PointXYZRGB, 1 for PointXYZI;
 # UseSegmenter: True
 
 #--------------------------------------------------------------------------------------------

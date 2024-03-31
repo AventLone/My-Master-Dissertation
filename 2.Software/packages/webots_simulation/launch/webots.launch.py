@@ -14,6 +14,7 @@ def generate_launch_description():
 
     # webots = WebotsLauncher(world=os.path.join(this_pkg, 'worlds', 'indoor.wbt'))
     webots = WebotsLauncher(world=os.path.join(this_pkg, 'worlds', 'wild_with_grass.wbt'))
+    # webots = WebotsLauncher(world=os.path.join(this_pkg, 'worlds', 'wild_without_grass_1.wbt'))
 
     my_robot_driver = WebotsController(
         robot_name='BD_Roamer',

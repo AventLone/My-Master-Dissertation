@@ -1,5 +1,4 @@
 #pragma once
-// #include <utility>
 #include "DataTypes.h"
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/float32_multi_array.hpp>
@@ -26,11 +25,9 @@ enum PlanningState
 class PFRRTStar
 {
 public:
-    // explicit PFRRTStar() = default;
-
     /* Input the height of the robot center,and the array of grid map. */
     explicit PFRRTStar(double height, World::Ptr world, GlobalPlanningNode* rcl_node)
-        : mH_surf(height), mWorld(world), mRclNode(rcl_node)
+        : mHfromSurf(height), mWorld(world), mRclNode(rcl_node)
     {
     }
     ~PFRRTStar() = default;
@@ -157,7 +154,7 @@ protected:
     double mStepSize = 0.2;   // step size used when generating new nodes
 
     /* Parameters related to function fitPlane */
-    float mH_surf;
+    const float mHfromSurf;   // The height that the cart bottom is from environment surface.
     FitPlaneArg mFitPlaneArg = {1.0, 2000.0, 0.0014, 0.4, 0.25, 0.4, 0.1152};
     double mRadiusFitPlane = 1.0;
 
@@ -233,7 +230,7 @@ protected:
      */
     void generatePath();
 
-    float calPathDis(const std::vector<Node::Ptr>& nodes);
+    float PathDistance(const std::vector<Node::Ptr>& nodes);
 
     void pubTraversabilityOfTree();
 };

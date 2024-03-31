@@ -10,7 +10,7 @@ int main(int argc, char** argv)
 
     rclcpp::ExecutorOptions options;
     rclcpp::executors::MultiThreadedExecutor executor(options, 2);   // Assign 2 threads to the thread pool.
-    // executor.add_node(controller_node);
+    executor.add_node(controller_node);
     executor.add_node(local_planner_node);
 
     executor.spin();

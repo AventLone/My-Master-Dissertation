@@ -2,8 +2,13 @@
 
 GprPath::GprPath(const std::string& name) : Node(name)
 {
-    declare_parameter("ConfigFilePath", std::string());
-    get_parameter("ConfigFilePath", mFilePath);
+    declare_parameter("HyperParameters.l", 1.1284);
+    declare_parameter("HyperParameters.f", 0.4048);
+    declare_parameter("HyperParameters.n", 0.1033);
+    get_parameter("HyperParameters.l", mLengthScale);
+    get_parameter("HyperParameters.f", mSigma_f);
+    get_parameter("HyperParameters.n", mSigma_n);
+
 
     mTreeSub = create_subscription<MultiArray>("putn/global_planning/tree_tra",
                                                rclcpp::ParametersQoS().reliable(),
@@ -17,11 +22,6 @@ GprPath::GprPath(const std::string& name) : Node(name)
 
 void GprPath::treeCallBack(const MultiArray::ConstSharedPtr& msg)
 {
-    // double duration;
-    // clock_t start, end;
-    // start = std::clock();
-    // RCLCPP_INFO(get_logger(), "Receive the tree.");
-
     if (msg->data.empty()) return;
 
     int num = static_cast<int>(msg->data.size() / 4);
@@ -30,13 +30,13 @@ void GprPath::treeCallBack(const MultiArray::ConstSharedPtr& msg)
         Eigen::Vector3f tmp_in;
         tmp_in << msg->data[4 * i], msg->data[4 * i + 1], msg->data[4 * i + 2];
         mTrainInputs.push_back(tmp_in);
-        Eigen::Vector3f tmp_out;
+        Eigen::Matrix<float, 1, 1> tmp_out;
         tmp_out << msg->data[4 * i + 3];
         mTrainOutputs.push_back(tmp_out);
     }
 
     GaussianProcessRegression<float> myGPR(mInputDim, mOutputDim);
-    setHyperParameters(mFilePath.c_str(), myGPR);
+    myGPR.setHyperParams(mLengthScale, mSigma_f, mSigma_n);
 
     for (size_t k = 0; k < mTrainInputs.size(); ++k)
     {
@@ -45,7 +45,7 @@ void GprPath::treeCallBack(const MultiArray::ConstSharedPtr& msg)
 
     double threshold = 0.1;
 
-    if (mTestInputs.size() == 0)
+    if (mTestInputs.empty())
     {
         mTrainInputs.clear();
         mTrainOutputs.clear();
@@ -53,40 +53,35 @@ void GprPath::treeCallBack(const MultiArray::ConstSharedPtr& msg)
         mTestOutputs.clear();
     }
 
-    MultiArray out_ym;
-    MultiArray out_ys;
+    MultiArray surface_prediction_msg;
+    // MultiArray out_ys;
 
     for (size_t k = 0; k < mTestInputs.size(); ++k)
     {
-        auto outp = myGPR.doRegression(mTestInputs[k]);
-        Eigen::Vector3f tmp_out;
+        float output_covariance;   // covariance
+        auto outp = myGPR.doRegression(mTestInputs[k], output_covariance);
+        Eigen::Matrix<float, 1, 1> tmp_out;
         tmp_out << outp;
         mTestOutputs.push_back(tmp_out);
-        // covariance
-        auto outp_cov = myGPR.doRegressioncov(mTestInputs[k]);
-        out_ym.data.push_back(mTestInputs[k](0, 0));
-        out_ym.data.push_back(mTestInputs[k](1, 0));
-        out_ym.data.push_back(mTestInputs[k](2, 0));
-        out_ym.data.push_back(tmp_out(0, 0));
-        out_ym.data.push_back(outp_cov(0, 0));
+
+
+        // auto output_covariance = myGPR.doRegressioncov(mTestInputs[k]);
+        surface_prediction_msg.data.push_back(mTestInputs[k](0));
+        surface_prediction_msg.data.push_back(mTestInputs[k](1));
+        surface_prediction_msg.data.push_back(mTestInputs[k](2));
+        surface_prediction_msg.data.push_back(tmp_out(0, 0));
+        surface_prediction_msg.data.push_back(output_covariance);
     }
-    mSurfacePredictPub->publish(out_ym);
-    MultiArray tmp_out;
+    mSurfacePredictPub->publish(surface_prediction_msg);
 
     mTrainInputs.clear();
     mTrainOutputs.clear();
     mTestInputs.clear();
     mTestOutputs.clear();
-
-    // end = std::clock();
-    // duration = static_cast<double>(end - start);
-
-    // RCLCPP_INFO(get_logger(), "Time consume : %f ms", duration / 1000.0);
 }
 
 void GprPath::pathCallBack(const MultiArray::ConstSharedPtr& msg)
 {
-    // RCLCPP_INFO(get_logger(), "Received the path.");
     if (msg->data.empty()) return;
 
     int num = static_cast<int>(msg->data.size() / 3);

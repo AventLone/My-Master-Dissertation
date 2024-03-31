@@ -29,7 +29,8 @@ PointCloudMapping::PointCloudMapping(const std::string& setting_file, const std:
     float resolution;
     try
     {
-        fs_settings["MapResolution.PointCloud"] >> resolution;
+        fs_settings["CloudMap.Resolution"] >> resolution;
+        fs_settings["CloudMap.Mode"] >> mMapMode;
     }
     catch (const std::exception& e)
     {
@@ -39,7 +40,19 @@ PointCloudMapping::PointCloudMapping(const std::string& setting_file, const std:
     }
     fs_settings.release();
 
-    mVoxelFilter.setLeafSize(resolution, resolution, resolution);
+    switch (mMapMode)
+    {
+        case COLORFUL:
+            mColorfunlMap = std::make_shared<pcl::PointCloud<pcl::PointXYZRGB>>();
+            break;
+        case SEMANTIC:
+            mSemanticMap = std::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+        default:
+            break;
+    }
+
+    mVoxelFilter_color.setLeafSize(resolution, resolution, resolution);
+    mVoxelFilter_semantic.setLeafSize(resolution, resolution, resolution);
     // mStatisticalFilter.setMeanK(meank);
     // mStatisticalFilter.setStddevMulThresh(thresh);
 
@@ -51,7 +64,10 @@ void PointCloudMapping::insertKeyFrame(KeyFrame* kf)
     if (kf->imgRGB.empty()) return;
     {
         std::unique_lock<std::mutex> lock(mKeyframeMutex);
-        // detectGreenBlue(kf->imgRGB);
+        if (mMapMode == SEMANTIC)
+        {
+            detectGreenBlue(kf->imgRGB);
+        }
 
         mKeyFrameBuffer.push(kf);
         if (mKeyFrameBuffer.size() > 35) mKeyFrameBuffer.pop();
@@ -62,35 +78,70 @@ void PointCloudMapping::insertKeyFrame(KeyFrame* kf)
 /*** Generate a pointcloud from a key frame. ***/
 void PointCloudMapping::generatePointCloud(KeyFrame* kf)
 {
-    PointCloud::Ptr point_cloud(new PointCloud);
-    PointT point;
-    for (int v = 0; v < kf->imgDepth.rows; v += 9)
+
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr color_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointXYZRGB color_point;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr semantic_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointXYZI semantic_point;
+
+    if (mMapMode == SEMANTIC)
     {
-        for (int u = 0; u < kf->imgDepth.cols; u += 9)
+        for (int v = 0; v < kf->imgDepth.rows; v += 9)
         {
-            auto d = kf->imgDepth.ptr<uint16_t>(v)[u];
-            if (d < 10 || d > 10000) continue;   // Remove abnormal points
+            for (int u = 0; u < kf->imgDepth.cols; u += 9)
+            {
+                auto d = kf->imgDepth.ptr<uint16_t>(v)[u];
+                if (d < 10 || d > 10000) continue;   // Remove abnormal points
 
-            point.z = static_cast<float>(d) / 1000.0f;
-            point.x = (u - kf->cx) * point.z / kf->fx;
-            point.y = (v - kf->cy) * point.z / kf->fy;
+                semantic_point.z = static_cast<float>(d) / 1000.0f;
+                semantic_point.x = (u - kf->cx) * semantic_point.z / kf->fx;
+                semantic_point.y = (v - kf->cy) * semantic_point.z / kf->fy;
 
-            point.r = kf->imgRGB.ptr<uchar>(v)[u * 3];
-            point.g = kf->imgRGB.ptr<uchar>(v)[u * 3 + 1];
-            point.b = kf->imgRGB.ptr<uchar>(v)[u * 3 + 2];
+                // semantic_point.r = kf->imgRGB.ptr<uchar>(v)[u * 3];
 
-            point_cloud->points.push_back(point);
+                semantic_cloud->points.push_back(semantic_point);
+            }
         }
+        semantic_cloud->height = 1;
+        semantic_cloud->width = color_cloud->points.size();
+        semantic_cloud->is_dense = false;
+
+        mVoxelFilter_semantic.setInputCloud(semantic_cloud);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZI>);
+        mVoxelFilter_semantic.filter(*temp_cloud);
+
+        kf->mSemanticCloud = temp_cloud;
     }
-    point_cloud->height = 1;
-    point_cloud->width = point_cloud->points.size();
-    point_cloud->is_dense = false;
+    else
+    {
+        for (int v = 0; v < kf->imgDepth.rows; v += 9)
+        {
+            for (int u = 0; u < kf->imgDepth.cols; u += 9)
+            {
+                auto d = kf->imgDepth.ptr<uint16_t>(v)[u];
+                if (d < 10 || d > 10000) continue;   // Remove abnormal points
 
-    mVoxelFilter.setInputCloud(point_cloud);
-    PointCloud::Ptr temp_cloud(new PointCloud);
-    mVoxelFilter.filter(*temp_cloud);
+                color_point.z = static_cast<float>(d) / 1000.0f;
+                color_point.x = (u - kf->cx) * color_point.z / kf->fx;
+                color_point.y = (v - kf->cy) * color_point.z / kf->fy;
 
-    kf->mPointCloud = temp_cloud;
+                color_point.r = kf->imgRGB.ptr<uchar>(v)[u * 3];
+                color_point.g = kf->imgRGB.ptr<uchar>(v)[u * 3 + 1];
+                color_point.b = kf->imgRGB.ptr<uchar>(v)[u * 3 + 2];
+
+                color_cloud->points.push_back(color_point);
+            }
+        }
+        color_cloud->height = 1;
+        color_cloud->width = color_cloud->points.size();
+        color_cloud->is_dense = false;
+
+        mVoxelFilter_color.setInputCloud(color_cloud);
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+        mVoxelFilter_color.filter(*temp_cloud);
+
+        kf->mColorCloud = temp_cloud;
+    }
 }
 
 /*** Loop closing to update the globe map ***/
@@ -99,16 +150,17 @@ void PointCloudMapping::updatePointCloud(Map& cur_map)
     mIsUpdating = true;
     mCurrentKFs = cur_map.GetAllKeyFrames();
 
-    PointCloud::Ptr tmp_global_map(new PointCloud), cur_pointcloud(new PointCloud);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr tmp_global_map(new pcl::PointCloud<pcl::PointXYZRGB>),
+        cur_pointcloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     for (const auto& kf : mCurrentKFs)
     {
         if (!mIsUpdating)
         {
             return;
         }
-        if (!kf->isBad() && !kf->mPointCloud->empty())
+        if (!kf->isBad() && !kf->mColorCloud->empty())
         {
-            pcl::transformPointCloud(*(kf->mPointCloud), *cur_pointcloud, kf->GetPoseInverse().matrix());
+            pcl::transformPointCloud(*(kf->mColorCloud), *cur_pointcloud, kf->GetPoseInverse().matrix());
             *tmp_global_map += *cur_pointcloud;
         }
     }
@@ -116,7 +168,7 @@ void PointCloudMapping::updatePointCloud(Map& cur_map)
     PRINT_INFO("Point cloud update finished.");
     {
         std::unique_lock<std::mutex> lock(mGlobalMapMutex);
-        mGlobalMap = tmp_global_map;
+        mColorfunlMap = tmp_global_map;
     }
     mIsUpdating = false;
 }
@@ -140,12 +192,12 @@ void PointCloudMapping::run()
 
         generatePointCloud(key_frame);
 
-        PointCloud::Ptr temp_cloud(new PointCloud);
-        pcl::transformPointCloud(*(key_frame->mPointCloud), *temp_cloud, key_frame->GetPoseInverse().matrix());
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr temp_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+        pcl::transformPointCloud(*(key_frame->mColorCloud), *temp_cloud, key_frame->GetPoseInverse().matrix());
 
         {
             std::unique_lock<std::mutex> lock(mGlobalMapMutex);
-            *mGlobalMap += *temp_cloud;
+            *mColorfunlMap += *temp_cloud;
         }
     }
 }

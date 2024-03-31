@@ -16,6 +16,7 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/project
 EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/appearances/protos/Roughcast.proto"
 
 WorldInfo {
+  FPS 30
   contactProperties [
     ContactProperties {
       forceDependentSlip [
@@ -25,9 +26,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.20979366702120214 -0.9772601267692416 -0.030810094202437917 5.3325289226217745
-  position -25.50265048143055 3.62221861226786 28.420866896782304
-  follow "uneven terrain"
+  orientation 0.14987160834698524 -0.9170909618814302 -0.36943560825518856 5.450214739767655
+  position -17.56386273712939 2.3611994133090297 16.2391185068755
 }
 TexturedBackground {
   texture "noon_cloudy_countryside"
@@ -36,7 +36,6 @@ TexturedBackground {
 TexturedBackgroundLight {
   texture "noon_sunny_garden"
   luminosity 3
-  castShadows FALSE
 }
 UnevenTerrain {
   translation 0 0 -0.01
@@ -76,16 +75,16 @@ DEF Trees Group {
           name "pine tree 3"
         }
         Pine {
-          translation -13.26 13.55 2.48
+          translation -13.26 13.55 2.1
           rotation 1 0 0 4.692820414042842e-06
           name "pine tree 4"
         }
         Pine {
-          translation -15.06 0.94 1.84
+          translation -15.06 5.07 2.19
           name "pine tree 5"
         }
         Pine {
-          translation 3.45 1 2.54
+          translation 2.63 -0.19 2.54
           name "pine tree 6"
         }
         Pine {
@@ -102,7 +101,7 @@ DEF Trees Group {
           name "oak tree 1"
         }
         Oak {
-          translation -0.51 9.07 2.08
+          translation 0.2 8.2 2
           name "oak tree 2"
         }
         Oak {
@@ -126,15 +125,15 @@ DEF Trees Group {
           name "oak tree 7"
         }
         Oak {
-          translation -1.46 1.01 2.82
+          translation 1.56 0 2.82
           name "oak tree 8"
         }
         Oak {
-          translation -0.78 5.83 2.11
+          translation -0.78 5.9 2.11
           name "oak tree 9"
         }
         Oak {
-          translation 2.09 10.09 2.23
+          translation 3.38 9.88 2.23
           name "oak tree 10"
         }
         Oak {
@@ -170,19 +169,19 @@ DEF Trees Group {
     DEF BigSassafras Group {
       children [
         BigSassafras {
-          translation -2.75 9.39 1.94
+          translation 11.51 -15.66 3.06
           name "sassafras tree 1"
         }
         BigSassafras {
-          translation 10.99 12.68 2.49
+          translation 10.99 16.08 2.49
           name "sassafras tree 2"
         }
         BigSassafras {
-          translation -4.74 13.9 2.24
+          translation -3.14 10.14 2.24
           name "sassafras tree 3"
         }
         BigSassafras {
-          translation 4.4 7.95 2.12
+          translation 9.4 9.6 2.12
           name "sassafras tree 4"
         }
         BigSassafras {
@@ -202,11 +201,11 @@ DEF Trees Group {
           name "cypress tree 1"
         }
         Cypress {
-          translation -1.06 7.93 2.2
+          translation 3.06 15.68 2.2
           name "cypress tree 2"
         }
         Cypress {
-          translation 0.23 3.96 2.3
+          translation 2.17 3.96 2.3
           rotation 1 0 0 4.692820414042842e-06
           name "cypress tree 3"
         }
@@ -215,7 +214,7 @@ DEF Trees Group {
           name "cypress tree 4"
         }
         Cypress {
-          translation 6.17 10.48 2.32
+          translation -1.94 8.48 2.32
           name "cypress tree 5"
         }
         Cypress {
@@ -227,14 +226,14 @@ DEF Trees Group {
   ]
 }
 DEF BD_Roamer Robot {
-  translation -12 7.16296 2.51828
-  rotation 0.04038752846130345 -0.13043128178907692 -0.9906344069714345 0.07246470847341503
+  translation -11.5 7.16296 2.51828
+  rotation 0.04038752846130382 -0.1304312817890768 -0.9906344069714345 0.072464708473415
   children [
     DEF IMU Group {
       children [
         Gyro {
           translation 0.18 0 0.36
-          rotation 0.5773529358523396 -0.5773499358526729 0.5773479358528951 -2.094395307179586
+          rotation 0.5773509358554485 -0.5773509358554485 0.5773489358556708 -2.094395307179586
         }
         Accelerometer {
           translation 0.18 0 0.36
@@ -245,7 +244,7 @@ DEF BD_Roamer Robot {
     DEF RealSense Group {
       children [
         Camera {
-          translation 0.18 0 0.36
+          translation 0.187659 0 0.368382
           children [
             Shape {
               appearance BrushedAluminium {
@@ -263,14 +262,14 @@ DEF BD_Roamer Robot {
           height 480
         }
         RangeFinder {
-          translation 0.18 0 0.36
+          translation 0.187659 0 0.368382
           name "depth-camera"
           width 640
           height 480
           maxRange 10
         }
         Solid {
-          translation 0.18 -9.91764e-07 0.36
+          translation 0.187659 0 0.368382
           rotation 1 0 0 1.5708
           children [
             Shape {

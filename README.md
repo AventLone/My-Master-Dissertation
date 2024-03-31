@@ -65,7 +65,7 @@ The global planning is based on :
 
 ## Gaussian Process Regression Prediction
 
-
+高斯过程回归（Gaussian Process Regression, GPR）是使用高斯过程（Gaussian Process, GP）先验对数据进行回归分析的非参数模型（Non-Parameteric Model）。
 
 
 

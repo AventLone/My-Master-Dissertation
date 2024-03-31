@@ -1127,7 +1127,7 @@ float System::GetImageScale()
 /*** For PointCloud Mapping ***/
 // void System::getPointCloudMap(pcl::PointCloud<pcl::PointXYZRGB>& pointcloud_map)
 // {
-//     pointcloud_map = mPointCloudMapper->mGlobalMap;
+//     pointcloud_map = mPointCloudMapper->mColorfunlMap;
 // }
 
 #ifdef REGISTER_TIMES

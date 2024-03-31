@@ -2,7 +2,7 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <vector>
-#include "macro_print.h"
+// #include "macro_print.h"
 
 template<typename RealType>
 class GaussianProcessRegression
@@ -11,7 +11,13 @@ class GaussianProcessRegression
     using VectorXr = Eigen::Matrix<RealType, Eigen::Dynamic, 1>;
 
 public:
-    explicit GaussianProcessRegression(int inputDim, int outputDim);
+    explicit GaussianProcessRegression(int inputDim, int outputDim)
+    {
+        mInputData.resize(inputDim, 0);
+        mOutputData.resize(outputDim, 0);
+        n_data_ = 0;
+    }
+
 
     void setHyperParams(double l, double f, double n)
     {
@@ -35,21 +41,27 @@ public:
 
     RealType SQEcovFuncD(VectorXr x1, VectorXr x2);
 
-    void debug();
+    void debug()
+    {
+        std::cout << "input data \n" << mInputData << std::endl;
+        std::cout << "output data \n" << mOutputData << std::endl;
+    }
 
     MatrixXr SQEcovFunc(MatrixXr x1);
     VectorXr SQEcovFunc(MatrixXr x1, VectorXr x2);
     // these are fast methods
     void prepareRegression(bool force_prepare = false);
 
-    VectorXr doRegression(const VectorXr& inp, bool prepare = false);
+    VectorXr doRegression(const VectorXr& input, bool prepare = false);
 
-    VectorXr doRegressioncov(const VectorXr& inp, bool prepare = false);
+    VectorXr doRegression(const VectorXr& input, float& covariance, bool prepare = false);
+
+    VectorXr doRegressioncov(const VectorXr& input, bool prepare = false);
 
     // these are the old implementations that are slow, inaccurate and easy to understand
     void prepareRegressionOld(bool force_prepare = false);
 
-    VectorXr doRegressionOld(const VectorXr& inp, bool prepare = false);
+    VectorXr doRegressionOld(const VectorXr& input, bool prepare = false);
 
     int get_n_data()
     {
@@ -85,15 +97,7 @@ private:
 };
 
 template<typename R>
-GaussianProcessRegression<R>::GaussianProcessRegression(int inputDim, int outputDim)
-{
-    mInputData.resize(inputDim, 0);
-    mOutputData.resize(outputDim, 0);
-    n_data_ = 0;
-}
-
-template<typename R>
-void GaussianProcessRegression<R>::addTrainingData(const VectorXr& newInput, const VectorXr& newOutput)
+void GaussianProcessRegression<R>::addTrainingData(const VectorXr& input, const VectorXr& output)
 {
     n_data_++;
     if (n_data_ >= mInputData.cols())
@@ -101,30 +105,30 @@ void GaussianProcessRegression<R>::addTrainingData(const VectorXr& newInput, con
         mInputData.conservativeResize(mInputData.rows(), n_data_);
         mOutputData.conservativeResize(mOutputData.rows(), n_data_);
     }
-    mInputData.col(n_data_ - 1) = newInput;
-    mOutputData.col(n_data_ - 1) = newOutput;
+    mInputData.col(n_data_ - 1) = input;
+    mOutputData.col(n_data_ - 1) = output;
     b_need_prepare_ = true;
 }
 
 template<typename R>
-void GaussianProcessRegression<R>::addTrainingDataBatch(const MatrixXr& newInput, const MatrixXr& newOutput)
+void GaussianProcessRegression<R>::addTrainingDataBatch(const MatrixXr& input_batch, const MatrixXr& output_batch)
 {
     // sanity check of provided data
-    assert(newInput.cols() == newOutput.cols());
+    assert(input_batch.cols() == output_batch.cols());
     // if this is the first data, just add it..
     if (n_data_ == 0)
     {
-        mInputData = newInput;
-        mOutputData = newOutput;
+        mInputData = input_batch;
+        mOutputData = output_batch;
         n_data_ = mInputData.cols();
     }
     // if we already have data, first check dimensionaly match
     else
     {
-        assert(mInputData.rows() == newInput.rows());
-        assert(mOutputData.rows() == newOutput.rows());
+        assert(mInputData.rows() == input_batch.rows());
+        assert(mOutputData.rows() == output_batch.rows());
         size_t n_data_old = n_data_;
-        n_data_ += newInput.cols();
+        n_data_ += input_batch.cols();
         // resize the matrices
         if (n_data_ > mInputData.cols())
         {
@@ -132,8 +136,8 @@ void GaussianProcessRegression<R>::addTrainingDataBatch(const MatrixXr& newInput
             mOutputData.conservativeResize(mOutputData.rows(), n_data_);
         }
         // insert the new data using block operations
-        mInputData.block(0, n_data_old, newInput.rows(), newInput.cols()) = newInput;
-        mOutputData.block(0, n_data_old, newOutput.rows(), newOutput.cols()) = newOutput;
+        mInputData.block(0, n_data_old, input_batch.rows(), input_batch.cols()) = input_batch;
+        mOutputData.block(0, n_data_old, output_batch.rows(), output_batch.cols()) = output_batch;
     }
     // in any case after adding a batch of data we need to recompute decomposition (in lieu of matrix inversion)
     b_need_prepare_ = true;
@@ -145,22 +149,21 @@ R GaussianProcessRegression<R>::SQEcovFuncD(VectorXr x1, VectorXr x2)
 {
     mDist = x1 - x2;
     double d = mDist.dot(mDist);
-    d = mSigma_f * mSigma_f * exp(-1 / mLengthScale / mLengthScale / 2 * d);
+    d = mSigma_f * mSigma_f * std::exp(-1 / mLengthScale / mLengthScale / 2 * d);
     return d;
 }
 
 template<typename R>
 typename GaussianProcessRegression<R>::VectorXr GaussianProcessRegression<R>::SQEcovFunc(MatrixXr x1, VectorXr x2)
 {
-    int nCol = x1.cols();
-    VectorXr KXx(nCol);
-    for (int i = 0; i < nCol; i++)
+    int cols = x1.cols();
+    VectorXr covariance(cols);   // Covariance between the training data and test data
+    for (int i = 0; i < cols; i++)
     {
-        KXx(i) = SQEcovFuncD(x1.col(i), x2);
+        covariance(i) = SQEcovFuncD(x1.col(i), x2);
     }
-    return KXx;
+    return covariance;
 }
-
 
 template<typename R>
 void GaussianProcessRegression<R>::prepareRegression(bool force_prepare)
@@ -204,7 +207,7 @@ void GaussianProcessRegression<R>::prepareRegressionOld(bool force_prepare)
 // This is the right way to do it but this code should be refactored and tweaked so that the decompositon is not
 // recomputed unless new training data has arrived.
 template<typename R>
-typename GaussianProcessRegression<R>::VectorXr GaussianProcessRegression<R>::doRegression(const VectorXr& inp,
+typename GaussianProcessRegression<R>::VectorXr GaussianProcessRegression<R>::doRegression(const VectorXr& input,
                                                                                            bool prepare)
 {
     // if(prepare || b_need_prepare_){
@@ -219,18 +222,46 @@ typename GaussianProcessRegression<R>::VectorXr GaussianProcessRegression<R>::do
     // ok
 
     outp.setZero();
-    KXx = SQEcovFunc(mInputData, inp);
-    // std::cout<<"KXx  "<<KXx<<std::endl;
-    for (size_t i = 0; i < mOutputData.rows(); ++i) outp(i) = KXx.dot(mAlpha.row(i));
+    KXx = SQEcovFunc(mInputData, input);
 
-    MatrixXr outp1 = SQEcovFunc(inp, inp) - KXx * KXX * (KXx.transpose());
-    // R output2  =  SQEcovFunc(inp,inp) -  KXx*KXX* KXx.transpose();
+    for (size_t i = 0; i < mOutputData.rows(); ++i)
+    {
+        outp(i) = KXx.dot(mAlpha.row(i));
+    }
+
+    // MatrixXr outp1 = SQEcovFunc(input, input) - KXx * KXX * (KXx.transpose());
+    float outp1 = SQEcovFuncD(input, input) - (KXx.transpose() * KXX * KXx)(0);
 
     return outp;
 }
 
 template<typename R>
-typename GaussianProcessRegression<R>::VectorXr GaussianProcessRegression<R>::doRegressioncov(const VectorXr& inp,
+typename GaussianProcessRegression<R>::VectorXr GaussianProcessRegression<R>::doRegression(const VectorXr& input,
+                                                                                           float& covariance,
+                                                                                           bool prepare)
+{
+    VectorXr outp(mOutputData.rows());
+    outp.setZero();
+    if (n_data_ == 0) return outp;
+
+    prepareRegression(prepare);
+    // ok
+
+    outp.setZero();
+    KXx = SQEcovFunc(mInputData, input);
+
+    for (size_t i = 0; i < mOutputData.rows(); ++i)
+    {
+        outp(i) = KXx.dot(mAlpha.row(i));
+    }
+
+    covariance = SQEcovFuncD(input, input) - (KXx.transpose() * KXX * KXx)(0);
+
+    return outp;
+}
+
+template<typename R>
+typename GaussianProcessRegression<R>::VectorXr GaussianProcessRegression<R>::doRegressioncov(const VectorXr& input,
                                                                                               bool prepare)
 {
     // if(prepare || b_need_prepare_){
@@ -245,18 +276,18 @@ typename GaussianProcessRegression<R>::VectorXr GaussianProcessRegression<R>::do
     // ok
 
     outp.setZero();
-    KXx = SQEcovFunc(mInputData, inp);
+    KXx = SQEcovFunc(mInputData, input);
     // std::cout<<"KXx  "<<KXx<<std::endl;
     for (size_t i = 0; i < mOutputData.rows(); ++i) outp(i) = KXx.dot(mAlpha.row(i));
 
-    MatrixXr outp1 = SQEcovFunc(inp, inp) - KXx * KXX * (KXx.transpose());
-    // R output2  =  SQEcovFunc(inp,inp) -  KXx*KXX* KXx.transpose();
+    MatrixXr outp1 = SQEcovFunc(input, input) - KXx * KXX * (KXx.transpose());
+    // R output2  =  SQEcovFunc(input,input) -  KXx*KXX* KXx.transpose();
 
     return outp1;
 }
 
 template<typename R>
-typename GaussianProcessRegression<R>::VectorXr GaussianProcessRegression<R>::doRegressionOld(const VectorXr& inp,
+typename GaussianProcessRegression<R>::VectorXr GaussianProcessRegression<R>::doRegressionOld(const VectorXr& input,
                                                                                               bool prepare)
 {
     if (prepare || b_need_prepare_)
@@ -265,7 +296,7 @@ typename GaussianProcessRegression<R>::VectorXr GaussianProcessRegression<R>::do
     }
     VectorXr outp(mOutputData.rows());
     outp.setZero();
-    KXx = SQEcovFunc(mInputData, inp);
+    KXx = SQEcovFunc(mInputData, input);
     VectorXr tmp(mInputData.cols());
 
     // this line is the slow one, hard to speed up further?
@@ -292,24 +323,15 @@ void GaussianProcessRegression<R>::clearTrainingData()
 template<typename R>
 typename GaussianProcessRegression<R>::MatrixXr GaussianProcessRegression<R>::SQEcovFunc(MatrixXr x1)
 {
-    int nCol = x1.cols();
-    MatrixXr retMat(nCol, nCol);
-    for (int i = 0; i < nCol; i++)
+    int cols = x1.cols();
+    MatrixXr retMat(cols, cols);
+    for (int i = 0; i < cols; i++)
     {
-        for (int j = i; j < nCol; j++)
+        for (int j = i; j < cols; j++)
         {
             retMat(i, j) = SQEcovFuncD(x1.col(i), x1.col(j));
             retMat(j, i) = retMat(i, j);
         }
     }
     return retMat;
-}
-
-template<typename R>
-void GaussianProcessRegression<R>::debug()
-{
-    // std::cout << "input data \n" << mInputData << std::endl;
-    // std::cout << "output data \n" << mOutputData << std::endl;
-    PRINT_DEBUG("input data\n" + mInputData);
-    PRINT_DEBUG("output data\n" << mOutputData);
 }

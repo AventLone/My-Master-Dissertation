@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(gpr)
+project(test)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
@@ -11,6 +11,8 @@ endif()
 set(DEPENDENT_PACKAGIES
     rclcpp
     std_msgs
+    geometry_msgs
+    tf2_ros
 )
 find_package(ament_cmake REQUIRED)
 
@@ -23,9 +25,6 @@ endforeach()
 # --------------------------------------------------------------------------------
 find_package(Eigen3 REQUIRED)
 
-# set(DEPENDENT_LIBS
-
-# )
 
 # link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 

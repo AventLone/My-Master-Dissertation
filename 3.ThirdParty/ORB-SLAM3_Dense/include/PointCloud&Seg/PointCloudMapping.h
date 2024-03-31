@@ -13,8 +13,14 @@ namespace ORB_SLAM3
 {
 class PointCloudMapping
 {
-    using PointT = pcl::PointXYZRGB;
-    using PointCloud = pcl::PointCloud<PointT>;
+    // using PointT = pcl::PointXYZRGB;
+    // using PointCloud = pcl::PointCloud<PointT>;
+
+    enum MapMode
+    {
+        COLORFUL = 0,
+        SEMANTIC
+    };
 
 public:
     // PointCloudMapping(const std::string& setting_file);
@@ -30,6 +36,7 @@ public:
 
     void updatePointCloud(Map& cur_map);
 
+
     void shutdown()
     {
         mShutdown = true;
@@ -42,11 +49,13 @@ public:
 
     std::atomic<bool> mIsUpdating{false};   // 关于更新时的变量
 
-    PointCloud::Ptr mGlobalMap{new PointCloud};
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr mColorfunlMap{nullptr};
+    pcl::PointCloud<pcl::PointXYZI>::Ptr mSemanticMap{nullptr};
 
     std::vector<KeyFrame*> mCurrentKFs;
 
 private:
+    MapMode mMapMode{COLORFUL};
     /* Buffers */
     std::queue<KeyFrame*> mKeyFrameBuffer;
 
@@ -61,8 +70,9 @@ private:
     // double thresh{1};
 
     /* Point cloud filter */
-    pcl::VoxelGrid<PointT> mVoxelFilter;
-    pcl::StatisticalOutlierRemoval<PointT> mStatisticalFilter;
+    pcl::VoxelGrid<pcl::PointXYZRGB> mVoxelFilter_color;
+    pcl::VoxelGrid<pcl::PointXYZI> mVoxelFilter_semantic;
+    // pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> mStatisticalFilter;
 
     // std::unique_ptr<TensorRT::SemanticSeger> mSegmenter{nullptr};
 

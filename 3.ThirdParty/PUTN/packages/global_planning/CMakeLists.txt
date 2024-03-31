@@ -21,6 +21,8 @@ set(DEPENDENT_PACKAGIES
     tf2_ros
     tf2_geometry_msgs
     pcl_conversions
+    octomap
+    octomap_msgs
 )
 
 find_package(ament_cmake REQUIRED)
@@ -35,8 +37,6 @@ endforeach()
 find_package(PCL REQUIRED)
 set(DEPENDENT_LIBS
     ${PCL_LIBRARIES}
-    -lstdc++
-    -lgfortran
 )
 
 # Find all source files

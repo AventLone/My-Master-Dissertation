@@ -1,26 +1,54 @@
 #pragma once
-#include "api/backward.hpp"
 #include "api/GlobalPlanner.h"
 #include <Eigen/Dense>
 #include <std_msgs/msg/float32_multi_array.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <octomap_msgs/msg/octomap.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 
 class GlobalPlanningNode : public rclcpp::Node
 {
+    friend putn::planner::PFRRTStar;
+
 public:
     explicit GlobalPlanningNode(const std::string& name);
 
-    void callPlanner();
+private:
+    bool mHasGoal{false};   // Indicate whether the robot has a moving goal
 
-    void setStartPoint(const geometry_msgs::msg::TransformStamped& transform_stamped)
-    {
-        mStartPoint << transform_stamped.transform.translation.x, transform_stamped.transform.translation.y,
-            transform_stamped.transform.translation.z;
-    }
+    double mMaxInitTime;
+    double mGoalThreshold;
+
+    /* useful global variables */
+    Eigen::Vector3d mStartPoint;   // The real-time robot state()
+    Eigen::Vector3d mTargetPoint;
+    // const Eigen::Vector3d mTargetPoint{4.3, 0.0, 0.1};
+
+    std::shared_ptr<putn::World> mWorld{nullptr};
+    std::unique_ptr<putn::planner::PFRRTStar> mPFRRTStar{nullptr};
+
+    /* TF */
+    std::unique_ptr<tf2_ros::Buffer> mTfBuffer{nullptr};
+    std::shared_ptr<tf2_ros::TransformListener> mTfListener{nullptr};
+
+    rclcpp::TimerBase::SharedPtr mTimer;
+
+    /* Subscriptions */
+    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr mMapSub;      // Subscrib the map passed from SLAM.
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr mGoalSub;   // Subscrib the goal passed from RVIZ.
+    // rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr mGoalSub;            // Subscrib the goal passed from RVIZ.
+
+    /* Publishers */
+    rclcpp::Publisher<octomap_msgs::msg::Octomap>::SharedPtr mGridMapVisualizePub;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr mPlaneVisualizePub;
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr mPathVisualizePub, mGoalVisualizePub,
+        mTreeVisualizePub;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr mGlobalPathPub, mTreeTraPub;
+
+    void callPlanner();
 
     void visualizeWorld();   // Visualize the grid map.
 
@@ -36,44 +64,11 @@ public:
     /** @brief Visualize the tree of PF-RRT*. */
     void visualizeTree(const std::vector<putn::Node::Ptr>& tree);
 
-    /* Publishers */
-    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr mGridMapVisualizePub, mPlaneVisualizePub;
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr mPathVisualizePub, mGoalVisualizePub,
-        mTreeVisualizePub;
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr mGlobalPathPub, mTreeTraPub;
-
-    std::unique_ptr<tf2_ros::Buffer> mTfBuffer{nullptr};
-
-private:
-    bool mHasGoal{false};   // Indicate whether the robot has a moving goal
-
-    double mMaxInitTime;
-    double mGoalThre;
-
-    /* useful global variables */
-    Eigen::Vector3d mStartPoint;
-    Eigen::Vector3d mTargetPoint;
-
-    std::shared_ptr<putn::World> mWorld{nullptr};
-    std::unique_ptr<putn::planner::PFRRTStar> mPFRRTStar{nullptr};
-
-    /* Subscriptions */
-    rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr mMapSub;
-    rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr mWayPointSub;
-
-
-    // tf2_ros::TransformListener mTfListener;
-    // std::unique_ptr<tf2_ros::TransformListener> mTfListener;
-    // tf2::BufferCore mTfBuffer;
-    // tf2_ros::TransformListener mTfListener{mTfBuffer};
-
-
-    std::shared_ptr<tf2_ros::TransformListener> mTfListener{nullptr};
-
     void pubGlobalPath(const std::vector<putn::Node::Ptr>& solution);
     void findSolution();
 
     /* ROS2 Callback functions */
-    void waypointsCallback(const nav_msgs::msg::Path::ConstSharedPtr& wp);
+    // void goalCallback(const nav_msgs::msg::Path::ConstSharedPtr& msg);
+    void goalCallback(const geometry_msgs::msg::PoseStamped::ConstSharedPtr& msg);
     void cloudMapCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg);
 };

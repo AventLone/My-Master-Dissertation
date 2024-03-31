@@ -23,7 +23,8 @@ Controller::Controller(const std::string& name) : rclcpp::Node(name)
         rclcpp::ServicesQoS().reliable(),
         std::bind(&Controller::localPlanCallback, this, std::placeholders::_1));
     mVelCmdPub = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", rclcpp::ServicesQoS().reliable());
-    mCurrStatePub = create_publisher<std_msgs::msg::Float32MultiArray>("curr_state", rclcpp::ServicesQoS().reliable());
+    mCurrStatePub =
+        create_publisher<std_msgs::msg::Float32MultiArray>("current_state", rclcpp::ServicesQoS().reliable());
 }
 
 void Controller::getCurrentState()

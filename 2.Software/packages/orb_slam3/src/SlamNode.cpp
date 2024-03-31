@@ -96,8 +96,9 @@ void SlamNode::rgbDepthCallback(const sensor_msgs::msg::Image::ConstSharedPtr& r
         cv::cvtColor(cv_ptrRGB->image, rgb_img, cv::COLOR_BGRA2RGB);
         cv::Mat depth = cv_ptrD->image * 1000;   // Convert the unit "meter" to "millimeter"
         depth.convertTo(depth_img, CV_16UC1);
-        mTcw = mSlamer->TrackRGBD(
-            rgb_img, depth_img, static_cast<rclcpp::Time>(cv_ptrRGB->header.stamp).seconds(), mImuMeas);
+        // mTcw = mSlamer->TrackRGBD(
+        //     rgb_img, depth_img, static_cast<rclcpp::Time>(cv_ptrRGB->header.stamp).seconds(), mImuMeas);
+        mTcw = mSlamer->TrackRGBD(rgb_img, depth_img, static_cast<rclcpp::Time>(cv_ptrRGB->header.stamp).seconds());
         mImuMeas.clear();
     }
     else

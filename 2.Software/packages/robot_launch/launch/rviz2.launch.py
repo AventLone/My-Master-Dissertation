@@ -10,6 +10,7 @@ def generate_launch_description():
 
     urdf_path = os.path.join(robot_description_pkg, "urdf/track_cart.urdf")
     rviz_config_path = os.path.join(this_pkg, "config/simulation_putn.rviz")
+    # rviz_config_path = os.path.join(this_pkg, "config/simulation.rviz")
 
     robot_state_publisher_node = Node(
         package="robot_state_publisher", executable="robot_state_publisher",

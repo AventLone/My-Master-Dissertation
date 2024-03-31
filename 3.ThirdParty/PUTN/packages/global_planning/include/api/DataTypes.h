@@ -13,7 +13,7 @@
 
 namespace putn
 {
-const float gINF = std::numeric_limits<float>::max();
+constexpr float gINF = std::numeric_limits<float>::max();
 
 struct Node;
 struct Plane;
@@ -61,7 +61,7 @@ struct Node
     using Ptr = std::shared_ptr<Node>;
     using ConstPtr = std::shared_ptr<const Node>;
     explicit Node() = default;
-    Node(const Node& node);
+    explicit Node(const Node& node);
     ~Node() = default;
 
     std::vector<Node::Ptr> children;
@@ -85,7 +85,7 @@ struct Path
 {
     using Ptr = std::shared_ptr<Path>;
     std::vector<Node::Ptr> nodes;
-    float dis;
+    float distance;
     float cost{gINF};
     enum Type
     {
@@ -94,12 +94,6 @@ struct Path
         Empty
     } type{Empty};
 };
-
-
-// namespace visualization
-// {
-// void visualizeWorld(World* world, const rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr& world_vis_pub);
-// }
 
 /**
  * @brief Class for storing obstacles and world dimension.The information of obstacle is stored in a three-dimensional
@@ -121,8 +115,6 @@ struct World
     {
         clearMap();
     }
-
-    // friend void visualization::visualizeWorld(World* world, ros::Publisher* world_vis_pub);
 
     Eigen::Vector3i index_count;
 
@@ -274,11 +266,12 @@ inline float EuclideanDistance(const Node::ConstPtr& p, const Node::ConstPtr& q)
     return EuclideanDistance(p->position, q->position);
 }
 
-inline float calCostBetweenTwoNode(const Node::ConstPtr& n1, const Node::ConstPtr& n2)
+inline float CostBetweenTwoNode(const Node::ConstPtr& n1, const Node::ConstPtr& n2)
 {
-    float dis = EuclideanDistance(n1, n2);
+    float distance = EuclideanDistance(n1, n2);
     float cost =
-        dis * (1.0f + 0.1f * (1 / (1.0001f - n1->plane->traversability) + 1 / (1.0001f - n2->plane->traversability)));
+        distance *
+        (1.0f + 0.1f * (1 / (1.0001f - n1->plane->traversability) + 1 / (1.0001f - n2->plane->traversability)));
     return cost;
 }
 }   // namespace putn

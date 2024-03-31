@@ -37,8 +37,6 @@ LocalObstacleNode::LocalObstacleNode(const std::string& name) : rclcpp::Node(nam
 
 void LocalObstacleNode::scanCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg)
 {
-    // RCLCPP_INFO(get_logger(), "Receive Velodyne Lidar scan!");
-
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(*msg, *cloud);
 
@@ -80,15 +78,12 @@ void LocalObstacleNode::scanCallback(const sensor_msgs::msg::PointCloud2::ConstS
         }
     }
 
-    // mTfListener->waitForTransform("/world", "/aft_mapped", ros::Time(0), ros::Duration(2.0));
-    // std::function<void(const tf2_ros::TransformStampedFuture&)> f = [&]() {};
-    // mTfBuffer->waitForTransform("world", "odom", tf2::TimePointZero, std::chrono::seconds(2), f);
-
     //-----------------
     // Wait for the transformation from "/world" to "/odom"
     try
     {
-        mTfBuffer->canTransform("world", "aft_mapped", tf2::TimePointZero, tf2::durationFromSec(2.0));
+        mTfBuffer->canTransform("world", "odom", tf2::TimePointZero, tf2::durationFromSec(2.0));
+        // mTfBuffer->canTransform("odom", "world", tf2::TimePointZero, tf2::durationFromSec(2.0));
     }
     catch (tf2::TransformException& e)
     {

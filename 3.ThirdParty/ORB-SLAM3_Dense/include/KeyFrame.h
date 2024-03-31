@@ -251,7 +251,8 @@ public:
 
     /*** For PointCloud Mapping ***/
     cv::Mat imgRGB, imgDepth;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr mPointCloud{nullptr};
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr mColorCloud{nullptr};
+    pcl::PointCloud<pcl::PointXYZI>::Ptr mSemanticCloud{nullptr};
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:

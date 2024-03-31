@@ -177,11 +177,11 @@ public:
     /*** Get Dense Map ***/
     // void getPointCloudMap(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& cloud)
     // {
-    //     cloud = mPointCloudMapper->mGlobalMap;
+    //     cloud = mPointCloudMapper->mColorfunlMap;
     // }
     const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& getPointCloudMap()
     {
-        return mPointCloudMapper->mGlobalMap;
+        return mPointCloudMapper->mColorfunlMap;
     }
 
 #ifdef REGISTER_TIMES
